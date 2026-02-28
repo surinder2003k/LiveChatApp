@@ -142,6 +142,7 @@ router.get("/", auth, async (req, res, next) => {
     const Message = require("../models/Message");
     const usersWithMeta = await Promise.all(
       users.map(async (user) => {
+        const isMe = String(user._id) === String(meId);
         if (isMe) {
           return { ...user, username: user.username, isMe: true, friendshipStatus: "me" };
         }
