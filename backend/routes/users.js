@@ -45,6 +45,16 @@ router.post("/friend-request", auth, async (req, res, next) => {
   }
 });
 
+router.post("/unblock", auth, async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    await User.findByIdAndUpdate(req.user.id, { $pull: { blockedUsers: userId } });
+    res.json({ message: "User unblocked" });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post("/friend-accept", auth, async (req, res, next) => {
   try {
     const { requestId } = req.body;
@@ -79,12 +89,10 @@ router.get("/", auth, async (req, res, next) => {
   try {
     const meId = req.user.id;
     const me = await User.findById(meId);
-    const io = req.app.get("io");
+    if (!me) return res.status(404).json({ message: "User not found" });
 
-    // Get ALL active users except blocked ones
-    const users = await User.find({
-      blockedUsers: { $ne: meId }
-    })
+    // Get ALL active users (we filter/mask blocked ones in the loop)
+    const users = await User.find({})
       .select("_id username email avatar online status friends blockedUsers")
       .sort({ online: -1, username: 1 })
       .lean();
@@ -97,10 +105,12 @@ router.get("/", auth, async (req, res, next) => {
           return { ...user, isMe: true, friendshipStatus: "me" };
         }
 
-        // Skip users I blocked for the general list (optional, but keep it clean)
-        if (me.blockedUsers.some(bId => String(bId) === String(user._id))) {
-          return null;
-        }
+        const isBlockedByMe = me.blockedUsers.some(bId => String(bId) === String(user._id));
+        const hasBlockedMe = user.blockedUsers?.some(bId => String(bId) === String(meId)) || false;
+
+        // Hide online status if blocked either way
+        const effectiveOnline = (isBlockedByMe || hasBlockedMe) ? false : user.online;
+        const effectiveStatus = (isBlockedByMe || hasBlockedMe) ? "Blocked" : user.status;
 
         const isFriend = me.friends.some(fId => String(fId) === String(user._id));
 
@@ -126,7 +136,16 @@ router.get("/", auth, async (req, res, next) => {
           seen: false
         });
 
-        return { ...user, unreadCount, friendshipStatus, requestId };
+        return {
+          ...user,
+          online: effectiveOnline,
+          status: effectiveStatus,
+          isBlockedByMe,
+          hasBlockedMe,
+          unreadCount,
+          friendshipStatus,
+          requestId
+        };
       })
     );
     res.json({ users: usersWithMeta.filter(Boolean) });
@@ -138,9 +157,20 @@ router.get("/", auth, async (req, res, next) => {
 // Update friend-request to emit
 router.post("/friend-request", auth, async (req, res, next) => {
   try {
-    const { receiverId } = req.body;
+    const receiverId = req.body.receiverId;
     const senderId = req.user.id;
     if (senderId === receiverId) return res.status(400).json({ message: "Cannot friend yourself" });
+
+    // Check for blocks
+    const receiver = await User.findById(receiverId);
+    const sender = await User.findById(senderId);
+
+    const isBlockedByMe = sender.blockedUsers.some(id => String(id) === String(receiverId));
+    const hasBlockedMe = receiver.blockedUsers.some(id => String(id) === String(senderId));
+
+    if (isBlockedByMe || hasBlockedMe) {
+      return res.status(403).json({ message: "Cannot send request to/from a blocked user" });
+    }
 
     const existing = await FriendRequest.findOne({ sender: senderId, receiver: receiverId, status: "pending" });
     if (existing) return res.status(400).json({ message: "Request already pending" });

@@ -34,6 +34,15 @@ export default function ChatPage() {
   const [typingFrom, setTypingFrom] = React.useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = React.useState(false);
 
+  const fetchUsers = React.useCallback(async () => {
+    try {
+      const res = await apiFetch<{ users: User[] }>("/api/users", { token });
+      setUsers(res.users || []);
+    } catch (_e) { }
+  }, [token]);
+
+  const onSocialRefresh = fetchUsers;
+
   const [confirmState, setConfirmState] = React.useState<{
     open: boolean;
     title: string;
@@ -174,12 +183,6 @@ export default function ChatPage() {
     socket.on("messageUpdate", onUpdate);
     socket.on("messageDelete", onDelete);
 
-    const onSocialRefresh = () => {
-      apiFetch<{ users: User[] }>("/api/users", { token }).then((res) => {
-        setUsers(res.users || []);
-      });
-    };
-
     const onChatCleared = ({ from }: { from: string }) => {
       const curActive = activeUserRef.current;
       if (curActive && String(from) === String(curActive._id)) {
@@ -212,9 +215,9 @@ export default function ChatPage() {
 
   // Merge online status into users list
   const usersWithStatus = React.useMemo(() => {
-    return users.map((u) => ({
+    return users.map((u: any) => ({
       ...u,
-      online: u.isMe ? true : onlineIds.has(String(u._id))
+      online: (u.isBlockedByMe || u.hasBlockedMe) ? false : (u.isMe ? true : onlineIds.has(String(u._id)))
     }));
   }, [users, onlineIds]);
 
@@ -265,12 +268,13 @@ export default function ChatPage() {
         await apiFetch("/api/users/friend-accept", { method: "POST", body: { requestId: data.requestId }, token });
         toast.success("Friend request accepted");
       } else if (action === "block") {
-        await apiFetch("/api/users/block", { method: "POST", body: { userId: activeProfile?._id }, token });
+        await apiFetch("/api/users/block", { method: "POST", body: { userId: data?.userId || activeProfile?._id }, token });
         toast.success("User blocked");
-        if (activeUser?._id === activeProfile?._id) {
-          setActiveUser(null);
-          setMessages([]);
-        }
+        onSocialRefresh();
+      } else if (action === "unblock") {
+        await apiFetch("/api/users/unblock", { method: "POST", body: { userId: data?.userId || activeProfile?._id }, token });
+        toast.success("User unblocked");
+        onSocialRefresh();
       } else if (action === "cancelFriend") {
         await apiFetch("/api/users/friend-cancel", { method: "POST", body: { requestId: data.requestId }, token });
         toast.success("Friend request cancelled");

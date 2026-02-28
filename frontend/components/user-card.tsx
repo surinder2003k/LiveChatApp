@@ -71,6 +71,11 @@ export function UserCard({
                   Request
                 </span>
               )}
+              {user.isBlockedByMe && (
+                <span className="shrink-0 rounded-full bg-destructive/20 px-1.5 py-0.5 text-[10px] font-bold text-destructive ring-1 ring-inset ring-destructive/20">
+                  Blocked
+                </span>
+              )}
             </div>
             <div className="truncate text-xs text-muted-foreground">
               {user.isMe ? "Click avatar to set status" : (user.status || (online ? "Online" : "Offline"))}

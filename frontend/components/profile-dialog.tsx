@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { User, ShieldAlert, UserPlus, UserCheck, UserMinus, XCircle, Edit2, Check } from "lucide-react";
+import { User, ShieldAlert, UserPlus, UserCheck, UserMinus, XCircle, Edit2, Check, Unlock } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -46,6 +46,32 @@ export function ProfileDialog({
         setEditingStatus(false);
         setLoading(false);
     }
+
+    const onBlock = async () => {
+        setLoading(true);
+        try {
+            await apiFetch("/api/users/block", { method: "POST", token, body: { userId: user._id } });
+            toast.success("User blocked");
+            onAction("block"); // Notify parent of block action
+        } catch (e: any) {
+            toast.error(e.message || "Failed to block");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onUnblock = async () => {
+        setLoading(true);
+        try {
+            await apiFetch("/api/users/unblock", { method: "POST", token, body: { userId: user._id } });
+            toast.success("User unblocked");
+            onAction("unblock"); // Notify parent of unblock action
+        } catch (e: any) {
+            toast.error(e.message || "Failed to unblock");
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>

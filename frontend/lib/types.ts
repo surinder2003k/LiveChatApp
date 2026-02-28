@@ -9,8 +9,9 @@ export type User = {
   friends?: string[];
   blockedUsers?: string[];
   friendshipStatus?: "none" | "sent" | "received" | "accepted" | "me";
-  requestId?: string;
   isMe?: boolean;
+  isBlockedByMe?: boolean;
+  hasBlockedMe?: boolean;
 };
 
 export type Message = {
