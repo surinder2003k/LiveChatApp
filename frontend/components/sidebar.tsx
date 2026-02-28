@@ -2,8 +2,10 @@
 
 import * as React from "react";
 import { Search } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserCard } from "@/components/user-card";
 import type { User } from "@/lib/types";
@@ -14,14 +16,17 @@ export function Sidebar({
   activeUserId,
   onSelectUser,
   onProfileOpen,
+  currentUser,
 }: {
   users: User[];
   loading: boolean;
   activeUserId: string | null;
   onSelectUser: (user: User) => void;
   onProfileOpen?: (user: User) => void;
+  currentUser: User | null;
 }) {
   const [q, setQ] = React.useState("");
+  const router = useRouter();
   const sortedUsers = React.useMemo(() => {
     const query = q.trim().toLowerCase();
     const filtered = users.filter((u) =>
@@ -40,6 +45,16 @@ export function Sidebar({
 
   return (
     <div className="glass flex h-full flex-col gap-3 p-3">
+      {currentUser?.role === "admin" && (
+        <Button
+          variant="outline"
+          className="w-full gap-2 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold shadow-sm"
+          onClick={() => router.push("/admin")}
+        >
+          <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+          Admin Dashboard
+        </Button>
+      )}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search users..." className="pl-9" />

@@ -11,6 +11,7 @@ const mongoose = require("mongoose");
 const authRoutes = require("./routes/auth");
 const usersRoutes = require("./routes/users");
 const messagesRoutes = require("./routes/messages");
+const adminRoutes = require("./routes/admin"); // New admin routes
 const { initSocket } = require("./socket/socketHandler");
 
 const PORT = process.env.PORT || 5000;
@@ -84,6 +85,7 @@ async function start() {
   app.use("/api/auth", authRoutes);
   app.use("/api/users", usersRoutes);
   app.use("/api/messages", messagesRoutes);
+  app.use("/api/admin", adminRoutes); // Protected admin section
 
   // Central error handler
   app.use((err, _req, res, _next) => {

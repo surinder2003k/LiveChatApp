@@ -13,6 +13,7 @@ export type User = {
   isMe?: boolean;
   isBlockedByMe?: boolean;
   hasBlockedMe?: boolean;
+  role?: "user" | "admin";
 };
 
 export type Message = {

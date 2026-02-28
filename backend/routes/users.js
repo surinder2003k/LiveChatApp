@@ -156,7 +156,7 @@ router.get("/", auth, async (req, res, next) => {
 
     // Get ALL active users (we filter/mask blocked ones in the loop)
     const users = await User.find({})
-      .select("_id username email avatar online status friends blockedUsers")
+      .select("_id username avatar online status friends blockedUsers role")
       .sort({ online: -1, username: 1 })
       .lean();
 
@@ -165,7 +165,13 @@ router.get("/", auth, async (req, res, next) => {
       users.map(async (user) => {
         const isMe = String(user._id) === String(meId);
         if (isMe) {
-          return { ...user, username: user.username, isMe: true, friendshipStatus: "me" };
+          return {
+            ...user,
+            email: me.email, // Include email only for myself
+            username: user.username,
+            isMe: true,
+            friendshipStatus: "me"
+          };
         }
 
         const isBlockedByMe = me.blockedUsers.some(bId => String(bId) === String(user._id));

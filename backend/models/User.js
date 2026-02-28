@@ -9,7 +9,8 @@ const UserSchema = new mongoose.Schema(
     online: { type: Boolean, default: false, index: true },
     status: { type: String, default: "Hey there! I am using ChatApp." },
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }]
+    blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+    role: { type: String, enum: ["user", "admin"], default: "user" }
   },
   { timestamps: true }
 );
@@ -23,7 +24,8 @@ UserSchema.methods.toSafeJSON = function () {
     online: this.online,
     status: this.status,
     friends: this.friends,
-    blockedUsers: this.blockedUsers
+    blockedUsers: this.blockedUsers,
+    role: this.role
   };
 };
 

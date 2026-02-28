@@ -108,7 +108,9 @@ export function ProfileDialog({
                         ) : (
                             <>
                                 <DialogTitle className="text-2xl font-bold">{user.username}</DialogTitle>
-                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                                {(isMe || currentUser?.role === "admin") && user.email && (
+                                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                                )}
                             </>
                         )}
                     </DialogHeader>
