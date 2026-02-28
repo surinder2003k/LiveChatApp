@@ -43,8 +43,11 @@ export function MessageBubble({
   const ts = typeof message.timestamp === "string" ? new Date(message.timestamp) : new Date(message.timestamp);
 
   const getFullUrl = (path: string) => {
+    if (!path) return "";
     if (path.startsWith("http")) return path;
-    return `${env.backendUrl}${path}`;
+    const baseUrl = env.backendUrl.endsWith("/") ? env.backendUrl.slice(0, -1) : env.backendUrl;
+    const cleanPath = path.startsWith("/") ? path : `/${path}`;
+    return `${baseUrl}${cleanPath}`;
   };
 
   const handleEditSubmit = () => {

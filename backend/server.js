@@ -69,7 +69,12 @@ async function start() {
       credentials: true,
     })
   );
-  app.use(helmet());
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: "cross-origin" },
+      contentSecurityPolicy: false, // Disabling CSP for now to ensure visibility, can be hardened later
+    })
+  );
   app.use(express.json({ limit: "1mb" }));
   app.use(morgan("dev"));
 
