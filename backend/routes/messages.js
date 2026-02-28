@@ -47,16 +47,20 @@ router.post("/upload", auth, (req, res, next) => {
   if (!process.env.CLOUDINARY_API_SECRET) missing.push("CLOUDINARY_API_SECRET");
 
   if (missing.length > 0) {
-    return res.status(500).json({ 
-      message: `Backend Error: Missing ${missing.join(", ")} on Render Dashboard.`, 
-      success: false 
+    return res.status(500).json({
+      message: `Backend Error: Missing ${missing.join(", ")} on Render Dashboard.`,
+      success: false
     });
   }
 
   upload.single("image")(req, res, (err) => {
     if (err) {
-      console.error("Cloudinary upload error:", err);
-      return res.status(500).json({ message: err.message || "Cloudinary upload failed", success: false });
+      console.error("DEBUG: Cloudinary upload error full object:", err);
+      return res.status(500).json({
+        message: err.message || "Cloudinary upload failed",
+        debug_err: err, // Expose full error for debugging
+        success: false
+      });
     }
     if (!req.file) return res.status(400).json({ message: "No file uploaded" });
     res.json({ url: req.file.path, success: true });
