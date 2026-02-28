@@ -40,6 +40,19 @@ const upload = multer({
 });
 
 router.post("/upload", auth, (req, res, next) => {
+  // Check if keys are actually present in the process env
+  const missing = [];
+  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push("CLOUDINARY_CLOUD_NAME");
+  if (!process.env.CLOUDINARY_API_KEY) missing.push("CLOUDINARY_API_KEY");
+  if (!process.env.CLOUDINARY_API_SECRET) missing.push("CLOUDINARY_API_SECRET");
+
+  if (missing.length > 0) {
+    return res.status(500).json({ 
+      message: `Backend Error: Missing ${missing.join(", ")} on Render Dashboard.`, 
+      success: false 
+    });
+  }
+
   upload.single("image")(req, res, (err) => {
     if (err) {
       console.error("Cloudinary upload error:", err);
