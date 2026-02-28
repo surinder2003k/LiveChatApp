@@ -1,0 +1,15 @@
+node_modules
+.next
+dist
+build
+.DS_Store
+*.log
+.env
+.env.*
+!.env.example
+coverage
+.turbo
+.vercel
+.idea
+.vscode
+
