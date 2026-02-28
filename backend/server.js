@@ -96,10 +96,10 @@ async function start() {
   // Central error handler
   app.use((err, _req, res, _next) => {
     const status = err.statusCode || 500;
-    const message = err.expose ? err.message : "Server error";
+    const message = err.expose ? err.message : (err.message || "Server error");
+
     if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.error(err);
+      console.error("DEBUG ERROR:", err);
     }
     res.status(status).json({ message });
   });
