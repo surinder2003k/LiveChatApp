@@ -216,7 +216,7 @@ export function ChatWindow({
       <div
         id="message-list"
         ref={listRef}
-        className="flex-1 flex flex-col justify-end space-y-4 overflow-y-auto p-3 md:p-4 scrollbar-hide"
+        className="flex-1 flex flex-col space-y-4 overflow-y-auto p-3 md:p-4"
       >
         <div className="flex-1" /> {/* Spacer to push content to bottom */}
         {messages.map((m) => (
