@@ -1,8 +1,12 @@
+const express = require("express");
+const { z } = require("zod");
+const mongoose = require("mongoose");
 const multer = require("multer");
 const path = require("path");
 
 const { auth } = require("../middleware/auth");
 const Message = require("../models/Message");
+const User = require("../models/User");
 
 const router = express.Router();
 
@@ -58,6 +62,10 @@ router.get("/:userId", auth, async (req, res, next) => {
 
 router.post("/:userId", auth, async (req, res, next) => {
   try {
+    const meId = req.user.id;
+    const otherId = req.params.userId;
+    if (!mongoose.isValidObjectId(otherId)) return res.status(400).json({ message: "Invalid user id" });
+
     const me = await User.findById(meId);
     const other = await User.findById(otherId);
     if (!other) return res.status(404).json({ message: "User not found" });
@@ -139,4 +147,3 @@ router.delete("/:userId/clear", auth, async (req, res, next) => {
 });
 
 module.exports = router;
-
