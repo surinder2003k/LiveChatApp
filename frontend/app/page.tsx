@@ -10,7 +10,7 @@ import { motion } from "framer-motion";
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen bg-[#050507] text-white selection:bg-blue-500/30">
+    <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-blue-500/30">
       <Navbar />
 
       {/* Grid Pattern Background */}
@@ -42,7 +42,7 @@ export default function LandingPage() {
                 className="text-6xl md:text-8xl font-black tracking-tight leading-[1.1]"
               >
                 Experience the Next-Gen <br />
-                <span className="text-white">Chat</span>
+                <span className="text-foreground">Chat</span>
                 <span className="text-blue-500">App</span> Interface
               </motion.h1>
 
@@ -137,7 +137,7 @@ export default function LandingPage() {
               whileHover={{ scale: 1.02 }}
               className="relative p-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 rounded-[3rem] overflow-hidden"
             >
-              <div className="bg-[#0a0a0c] rounded-[2.9rem] p-16 md:p-24 space-y-8 relative overflow-hidden">
+              <div className="bg-background/80 backdrop-blur-xl rounded-[2.9rem] p-16 md:p-24 space-y-8 relative overflow-hidden">
                 {/* Internal Glow */}
                 <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-blue-500/5 blur-[100px]" />
                 <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-purple-500/5 blur-[100px]" />
@@ -158,7 +158,7 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="py-20 border-t border-white/[0.05] bg-[#050507]">
+      <footer className="py-20 border-t border-primary/5 bg-background">
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-10">
             <div className="space-y-4 text-center md:text-left">
