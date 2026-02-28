@@ -71,7 +71,10 @@ export default function ChatPage() {
 
   React.useEffect(() => {
     if (authLoading) return;
-    if (!token) router.push("/");
+    // If we have no token and no loading, we should only redirect to "/" 
+    // if we are NOT actually signed into Clerk.
+    // If we ARE signed in to Clerk but have no token, the AuthProvider 
+    // is likely still syncing, so we stay here.
   }, [authLoading, token, router]);
 
   // Load users
@@ -414,14 +417,18 @@ export default function ChatPage() {
         {/* Chat */}
         <div className="flex-1 min-h-0 overflow-hidden md:h-[calc(100dvh-6rem)] shadow-2xl">
           {authLoading ? (
-            <Card className="glass h-full p-4">
-              <Skeleton className="h-10 w-48" />
-              <div className="mt-4 space-y-2">
-                <Skeleton className="h-16 w-2/3" />
-                <Skeleton className="ml-auto h-16 w-2/3" />
-                <Skeleton className="h-16 w-2/3" />
+            <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
+              <div className="scale-125 mb-4 animate-pulse">
+                <Brand />
               </div>
-            </Card>
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <div className="space-y-1">
+                  <p className="text-foreground font-bold text-lg">Syncing Account</p>
+                  <p className="text-muted-foreground animate-pulse text-sm">Please wait while we set up your workspace...</p>
+                </div>
+              </div>
+            </div>
           ) : user ? (
             <ChatWindow
               meId={user._id}
@@ -439,14 +446,17 @@ export default function ChatPage() {
             />
           ) : (
             <Card className="glass flex h-full items-center justify-center">
-              <Button
-                onClick={() => {
-                  logout();
-                  router.push("/login");
-                }}
-              >
-                Go to login
-              </Button>
+              <div className="text-center space-y-4">
+                <p className="text-muted-foreground">Session expired or not signed in</p>
+                <Button
+                  onClick={() => {
+                    logout();
+                    router.push("/login");
+                  }}
+                >
+                  Go to Login
+                </Button>
+              </div>
             </Card>
           )}
         </div>
