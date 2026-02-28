@@ -3,6 +3,7 @@
 import * as React from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { Brand } from "@/components/brand";
 import { Menu } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";

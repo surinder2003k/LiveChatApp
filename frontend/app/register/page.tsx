@@ -10,7 +10,10 @@ export default function RegisterPage() {
         <Brand />
       </div>
       <SignUp
-        redirectUrl="/chat"
+        routing="path"
+        path="/register"
+        signInUrl="/login"
+        afterSignUpUrl="/chat"
         appearance={{
           elements: {
             card: "glass border-none shadow-2xl",
