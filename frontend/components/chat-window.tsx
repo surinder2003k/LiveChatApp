@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
+import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import type { Message, User } from "@/lib/types";
+import dynamic from "next/dynamic";
+
+const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
 function initials(name: string) {
   return name
@@ -53,10 +56,23 @@ export function ChatWindow({
 }) {
   const { token } = useAuth();
   const [text, setText] = React.useState("");
+  const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+  const pickerRef = React.useRef<HTMLDivElement | null>(null);
   const listRef = React.useRef<HTMLDivElement | null>(null);
   const typingTimeout = React.useRef<number | null>(null);
+
+  // Close emoji picker when clicking outside
+  React.useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const lastSnappedId = React.useRef<string | null>(null);
 
@@ -240,11 +256,44 @@ export function ChatWindow({
               >
                 {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
               </Button>
+              <div className="relative flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full",
+                    showEmojiPicker && "text-primary bg-primary/10"
+                  )}
+                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                >
+                  <Smile className="h-5 w-5" />
+                </Button>
+
+                {showEmojiPicker && (
+                  <div
+                    ref={pickerRef}
+                    className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
+                  >
+                    <EmojiPicker
+                      onEmojiClick={(emojiData) => {
+                        setText((prev) => prev + emojiData.emoji);
+                        // setShowEmojiPicker(false); // Keep open to add multiple emojis like IG
+                      }}
+                      autoFocusSearch={false}
+                      theme={"dark" as any}
+                      width={320}
+                      height={400}
+                    />
+                  </div>
+                )}
+              </div>
+
               <Input
                 value={text}
                 onChange={(e) => handleChange(e.target.value)}
                 placeholder="Type your message..."
                 className="border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+                onFocus={() => setShowEmojiPicker(false)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
