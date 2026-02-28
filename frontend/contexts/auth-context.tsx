@@ -44,15 +44,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const clerkToken = await getToken();
       if (!clerkToken) throw new Error("No clerk token");
 
+      const fullName = (clerkUser.firstName || "") + (clerkUser.lastName ? " " + clerkUser.lastName : "");
+      const finalUsername = clerkUser.username || fullName || clerkUser.primaryEmailAddress?.emailAddress?.split("@")[0] || "User";
+
+      console.log("Syncing with backend:", { email: clerkUser.primaryEmailAddress?.emailAddress, finalUsername });
+
       // Sign in / sync user to our mongo db
       const res = await apiFetch<{ token: string; user: User }>("/api/auth/sync", {
         method: "POST",
         token: clerkToken, // Sending clerk token to sync endpoint
-        body: JSON.stringify({
+        body: {
           email: clerkUser.primaryEmailAddress?.emailAddress,
-          username: clerkUser.username || clerkUser.firstName || "User",
+          username: finalUsername,
           avatar: clerkUser.imageUrl
-        })
+        }
       });
 
       setTokenCookie(res.token);

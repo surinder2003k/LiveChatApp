@@ -86,9 +86,17 @@ router.post("/sync", async (req, res, next) => {
         avatar: avatar || ""
       });
     } else {
-      // Update avatar if changed
+      // Update info if changed
+      let changed = false;
+      if (username && username !== user.username) {
+        user.username = username;
+        changed = true;
+      }
       if (avatar && avatar !== user.avatar) {
         user.avatar = avatar;
+        changed = true;
+      }
+      if (changed) {
         await user.save();
       }
     }

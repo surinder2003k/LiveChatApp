@@ -50,11 +50,7 @@ export function ProfileDialog({
     const onBlock = async () => {
         setLoading(true);
         try {
-            await apiFetch("/api/users/block", { method: "POST", token, body: { userId: user._id } });
-            toast.success("User blocked");
-            onAction("block"); // Notify parent of block action
-        } catch (e: any) {
-            toast.error(e.message || "Failed to block");
+            await onAction("block", { userId: user._id });
         } finally {
             setLoading(false);
         }
@@ -63,11 +59,16 @@ export function ProfileDialog({
     const onUnblock = async () => {
         setLoading(true);
         try {
-            await apiFetch("/api/users/unblock", { method: "POST", token, body: { userId: user._id } });
-            toast.success("User unblocked");
-            onAction("unblock"); // Notify parent of unblock action
-        } catch (e: any) {
-            toast.error(e.message || "Failed to unblock");
+            await onAction("unblock", { userId: user._id });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const onUnfriend = async () => {
+        setLoading(true);
+        try {
+            await onAction("unfriend", { userId: user._id });
         } finally {
             setLoading(false);
         }
@@ -121,44 +122,56 @@ export function ProfileDialog({
                             )}
                         </div>
 
-                        <div className="flex flex-col gap-2 pt-2">
+                        <div className="flex flex-col gap-2 pt-2 border-t border-primary/10 mt-4">
                             {!isMe && (
                                 <>
-                                    {user.friendshipStatus === "none" && (
-                                        <Button className="w-full gap-2 bg-primary shadow-lg hover:shadow-primary/20" onClick={() => onAction("addFriend")} disabled={loading}>
-                                            <UserPlus className="h-4 w-4" /> Add Friend
-                                        </Button>
-                                    )}
-                                    {user.friendshipStatus === "sent" && (
-                                        <div className="flex flex-col gap-2">
-                                            <Button variant="secondary" className="w-full gap-2" disabled>
-                                                <UserCheck className="h-4 w-4" /> Request Pending
-                                            </Button>
-                                            <Button variant="ghost" className="w-full gap-2 text-xs text-red-500 hover:bg-red-500/10" onClick={() => onAction("cancelFriend", { requestId: user.requestId })} disabled={loading}>
-                                                <XCircle className="h-3 w-3" /> Cancel Request
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {user.friendshipStatus === "received" && (
-                                        <div className="flex flex-col gap-2">
-                                            <Button className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-lg" onClick={() => onAction("acceptFriend", { requestId: user.requestId })} disabled={loading}>
-                                                <UserCheck className="h-4 w-4" /> Accept Request
-                                            </Button>
-                                            <Button variant="outline" className="w-full gap-2 border-red-500/20 text-red-500 hover:bg-red-500/10" onClick={() => onAction("declineFriend", { requestId: user.requestId })} disabled={loading}>
-                                                <XCircle className="h-4 w-4" /> Decline Request
-                                            </Button>
-                                        </div>
-                                    )}
-                                    {user.friendshipStatus === "accepted" && (
-                                        <Button variant="outline" className="w-full gap-2 border-red-500/20 text-red-500 hover:bg-red-500/10" onClick={() => onAction("unfriend")} disabled={loading}>
-                                            <UserMinus className="h-4 w-4" /> Unfriend
-                                        </Button>
-                                    )}
+                                    <div className="mb-1 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">Professional Actions</div>
 
-                                    <div className="flex gap-2">
-                                        <Button variant="ghost" className="flex-1 gap-2 text-xs text-muted-foreground hover:text-red-500" onClick={() => onAction("block")} disabled={loading}>
-                                            <ShieldAlert className="h-3 w-3" /> Block User
-                                        </Button>
+                                    <div className="flex flex-col gap-2 mt-2">
+                                        {!user.isBlockedByMe && !user.hasBlockedMe ? (
+                                            <div className="flex gap-2">
+                                                {user.friendshipStatus === "none" && (
+                                                    <Button className="flex-1 gap-2 bg-primary shadow-lg hover:shadow-primary/20" onClick={() => onAction("addFriend")} disabled={loading}>
+                                                        <UserPlus className="h-4 w-4" /> Add Friend
+                                                    </Button>
+                                                )}
+                                                {user.friendshipStatus === "sent" && (
+                                                    <Button variant="secondary" className="flex-1 gap-2" disabled>
+                                                        <UserCheck className="h-4 w-4" /> Pending
+                                                    </Button>
+                                                )}
+                                                {user.friendshipStatus === "received" && (
+                                                    <Button className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-lg" onClick={() => onAction("acceptFriend", { requestId: user.requestId })} disabled={loading}>
+                                                        <UserCheck className="h-4 w-4" /> Accept
+                                                    </Button>
+                                                )}
+                                                {user.friendshipStatus === "accepted" && (
+                                                    <Button variant="outline" className="flex-1 gap-2 border-orange-500/20 text-orange-500 hover:bg-orange-500/10" onClick={onUnfriend} disabled={loading}>
+                                                        <UserMinus className="h-4 w-4" /> Unfriend
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="text-[10px] text-center text-muted-foreground/60 italic mb-2">
+                                                Interactions restricted
+                                            </div>
+                                        )}
+
+                                        {user.isBlockedByMe ? (
+                                            <Button variant="secondary" className="w-full gap-2 text-primary hover:bg-primary/10 border-primary/20" onClick={onUnblock} disabled={loading}>
+                                                <Unlock className="h-4 w-4" /> Unblock User
+                                            </Button>
+                                        ) : (
+                                            <Button variant="ghost" className="w-full gap-2 text-muted-foreground hover:text-red-500 hover:bg-red-500/5" onClick={onBlock} disabled={loading}>
+                                                <ShieldAlert className="h-4 w-4" /> Block User
+                                            </Button>
+                                        )}
+
+                                        {user.hasBlockedMe && (
+                                            <div className="text-[10px] text-center text-muted-foreground/60 italic mt-1">
+                                                This profile has been restricted.
+                                            </div>
+                                        )}
                                     </div>
                                 </>
                             )}

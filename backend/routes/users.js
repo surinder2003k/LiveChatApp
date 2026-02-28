@@ -75,6 +75,28 @@ router.post("/friend-accept", auth, async (req, res, next) => {
   }
 });
 
+router.post("/unfriend", auth, async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const meId = req.user.id;
+
+    await User.findByIdAndUpdate(meId, { $pull: { friends: userId } });
+    await User.findByIdAndUpdate(userId, { $pull: { friends: meId } });
+
+    // Also delete any existing friend request documents between them so they can re-request
+    await FriendRequest.deleteMany({
+      $or: [
+        { sender: meId, receiver: userId },
+        { sender: userId, receiver: meId }
+      ]
+    });
+
+    res.json({ message: "Unfriended successfully" });
+  } catch (e) {
+    next(e);
+  }
+});
+
 router.post("/block", auth, async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -100,17 +122,16 @@ router.get("/", auth, async (req, res, next) => {
     const Message = require("../models/Message");
     const usersWithMeta = await Promise.all(
       users.map(async (user) => {
-        const isMe = String(user._id) === String(meId);
         if (isMe) {
-          return { ...user, isMe: true, friendshipStatus: "me" };
+          return { ...user, username: user.username, isMe: true, friendshipStatus: "me" };
         }
 
         const isBlockedByMe = me.blockedUsers.some(bId => String(bId) === String(user._id));
         const hasBlockedMe = user.blockedUsers?.some(bId => String(bId) === String(meId)) || false;
 
-        // Hide online status if blocked either way
+        // Hide online status if blocked either way, but leave status message as is per user feedback
         const effectiveOnline = (isBlockedByMe || hasBlockedMe) ? false : user.online;
-        const effectiveStatus = (isBlockedByMe || hasBlockedMe) ? "Blocked" : user.status;
+        const effectiveStatus = user.status;
 
         const isFriend = me.friends.some(fId => String(fId) === String(user._id));
 
@@ -250,6 +271,42 @@ router.post("/friend-decline", auth, async (req, res, next) => {
     }
 
     res.json({ message: "Request declined" });
+  } catch (e) {
+    next(e);
+  }
+});
+
+// TEMPORARY: Reset EVERYTHING (Social, Chats, Statuses) - v4.0 Ultimate
+router.post("/reset-ultimate", async (req, res, next) => {
+  try {
+    const Message = require("../models/Message");
+
+    // 1. Clear all social connections (Friends & Blocks)
+    const userSocialResult = await User.updateMany(
+      {},
+      { $set: { friends: [], blockedUsers: [] } }
+    );
+
+    // 2. Clear all friend requests
+    const requestResult = await FriendRequest.deleteMany({});
+
+    // 3. Delete ALL chat messages
+    const messageResult = await Message.deleteMany({});
+
+    // 4. Set default WhatsApp-like status for all users
+    const statusResult = await User.updateMany(
+      {},
+      { $set: { status: "Hey there! I am using ChatApp." } }
+    );
+
+    res.json({
+      ok: true,
+      usersSocialCleared: userSocialResult.modifiedCount,
+      requestsDeleted: requestResult.deletedCount,
+      messagesDeleted: messageResult.deletedCount,
+      statusesReset: statusResult.modifiedCount,
+      message: "ULTIMATE GLOBAL RESET COMPLETE. All connections cleared, chats deleted, and default statuses restored."
+    });
   } catch (e) {
     next(e);
   }

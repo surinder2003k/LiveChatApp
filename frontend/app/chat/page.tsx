@@ -71,7 +71,7 @@ export default function ChatPage() {
 
   React.useEffect(() => {
     if (authLoading) return;
-    if (!token) router.push("/login");
+    if (!token) router.push("/");
   }, [authLoading, token, router]);
 
   // Load users
@@ -270,11 +270,12 @@ export default function ChatPage() {
       } else if (action === "block") {
         await apiFetch("/api/users/block", { method: "POST", body: { userId: data?.userId || activeProfile?._id }, token });
         toast.success("User blocked");
-        onSocialRefresh();
       } else if (action === "unblock") {
         await apiFetch("/api/users/unblock", { method: "POST", body: { userId: data?.userId || activeProfile?._id }, token });
         toast.success("User unblocked");
-        onSocialRefresh();
+      } else if (action === "unfriend") {
+        await apiFetch("/api/users/unfriend", { method: "POST", body: { userId: data?.userId || activeProfile?._id }, token });
+        toast.success("Unfriended successfully");
       } else if (action === "cancelFriend") {
         await apiFetch("/api/users/friend-cancel", { method: "POST", body: { requestId: data.requestId }, token });
         toast.success("Friend request cancelled");

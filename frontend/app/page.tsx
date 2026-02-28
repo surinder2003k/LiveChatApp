@@ -8,7 +8,21 @@ import Link from "next/link";
 import { Navbar } from "@/components/navbar";
 import { motion } from "framer-motion";
 
+import { useAuth } from "@/contexts/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 export default function LandingPage() {
+  const { token, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (token) {
+      router.replace("/chat");
+    }
+  }, [token, router]);
+
+  if (token) return null; // Prevent flash
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground selection:bg-blue-500/30">
       <Navbar />

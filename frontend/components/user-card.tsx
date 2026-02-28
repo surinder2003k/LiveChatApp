@@ -59,7 +59,7 @@ export function UserCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <span className="truncate font-medium">
-                {user.isMe ? "My Profile" : user.username}
+                {user.username}
               </span>
               {user.isMe && (
                 <span className="shrink-0 rounded-full bg-primary/20 px-1.5 py-0.5 text-[10px] font-bold text-primary ring-1 ring-inset ring-primary/20">
@@ -69,11 +69,6 @@ export function UserCard({
               {user.friendshipStatus === "received" && (
                 <span className="shrink-0 rounded-full bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-500 ring-1 ring-inset ring-amber-500/20">
                   Request
-                </span>
-              )}
-              {user.isBlockedByMe && (
-                <span className="shrink-0 rounded-full bg-destructive/20 px-1.5 py-0.5 text-[10px] font-bold text-destructive ring-1 ring-inset ring-destructive/20">
-                  Blocked
                 </span>
               )}
             </div>

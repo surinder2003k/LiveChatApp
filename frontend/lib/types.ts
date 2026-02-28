@@ -9,6 +9,7 @@ export type User = {
   friends?: string[];
   blockedUsers?: string[];
   friendshipStatus?: "none" | "sent" | "received" | "accepted" | "me";
+  requestId?: string | null;
   isMe?: boolean;
   isBlockedByMe?: boolean;
   hasBlockedMe?: boolean;

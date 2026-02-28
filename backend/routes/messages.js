@@ -35,9 +35,16 @@ router.get("/:userId", auth, async (req, res, next) => {
 
 router.post("/:userId", auth, async (req, res, next) => {
   try {
-    const meId = req.user.id;
-    const otherId = req.params.userId;
-    if (!mongoose.isValidObjectId(otherId)) return res.status(400).json({ message: "Invalid user id" });
+    const me = await User.findById(meId);
+    const other = await User.findById(otherId);
+    if (!other) return res.status(404).json({ message: "User not found" });
+
+    const isBlockedByMe = me.blockedUsers.includes(otherId);
+    const hasBlockedMe = other.blockedUsers.includes(meId);
+
+    if (isBlockedByMe || hasBlockedMe) {
+      return res.status(403).json({ message: "Communication restricted" });
+    }
 
     const body = sendSchema.parse(req.body);
     const message = await Message.create({

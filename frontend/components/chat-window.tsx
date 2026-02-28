@@ -169,6 +169,14 @@ export function ChatWindow({
             <div className="flex w-full items-center justify-center rounded-lg bg-primary/10 p-3 text-sm text-primary border border-primary/20">
               <span className="font-medium">This is your personal profile space. Click your avatar above to edit your status.</span>
             </div>
+          ) : (other.isBlockedByMe || other.hasBlockedMe || other.friendshipStatus !== "accepted") ? (
+            <div className="flex w-full items-center justify-center rounded-lg bg-red-500/10 p-3 text-sm text-red-500 border border-red-500/20">
+              <span className="font-medium">
+                {(other.isBlockedByMe || other.hasBlockedMe)
+                  ? "Communication has been restricted for this profile."
+                  : "You must be friends to exchange messages."}
+              </span>
+            </div>
           ) : other.friendshipStatus === "accepted" ? (
             <>
               <Input
