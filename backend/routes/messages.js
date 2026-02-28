@@ -12,11 +12,13 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// Cloudinary Configuration
+// Cloudinary Configuration (Cleaning strings from accidental spaces or quotes)
+const cleanEnv = (key) => (process.env[key] || "").trim().replace(/^["']|["']$/g, '');
+
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-  api_key: process.env.CLOUDINARY_API_KEY,
-  api_secret: process.env.CLOUDINARY_API_SECRET
+  cloud_name: cleanEnv("CLOUDINARY_CLOUD_NAME"),
+  api_key: cleanEnv("CLOUDINARY_API_KEY"),
+  api_secret: cleanEnv("CLOUDINARY_API_SECRET")
 });
 
 const storage = new CloudinaryStorage({
