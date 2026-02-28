@@ -13,12 +13,6 @@ const User = require("../models/User");
 const router = express.Router();
 
 // Cloudinary Configuration
-const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
-
-if (!isCloudinaryConfigured) {
-  console.warn("[WARNING] Cloudinary environment variables are missing!");
-}
-
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -39,32 +33,9 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-router.post("/upload", auth, (req, res, next) => {
-  // Check if keys are actually present in the process env
-  const missing = [];
-  if (!process.env.CLOUDINARY_CLOUD_NAME) missing.push("CLOUDINARY_CLOUD_NAME");
-  if (!process.env.CLOUDINARY_API_KEY) missing.push("CLOUDINARY_API_KEY");
-  if (!process.env.CLOUDINARY_API_SECRET) missing.push("CLOUDINARY_API_SECRET");
-
-  if (missing.length > 0) {
-    return res.status(500).json({
-      message: `Backend Error: Missing ${missing.join(", ")} on Render Dashboard.`,
-      success: false
-    });
-  }
-
-  upload.single("image")(req, res, (err) => {
-    if (err) {
-      console.error("DEBUG: Cloudinary upload error full object:", err);
-      return res.status(500).json({
-        message: err.message || "Cloudinary upload failed",
-        debug_err: err, // Expose full error for debugging
-        success: false
-      });
-    }
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-    res.json({ url: req.file.path, success: true });
-  });
+router.post("/upload", auth, upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+  res.json({ url: req.file.path, success: true });
 });
 
 const sendSchema = z.object({
@@ -116,6 +87,8 @@ router.post("/:userId", auth, async (req, res, next) => {
       senderId: meId,
       receiverId: otherId,
       text: body.text,
+      image: body.image || null,
+      type: body.image ? "image" : "text",
       timestamp: new Date(),
       seen: false
     });
