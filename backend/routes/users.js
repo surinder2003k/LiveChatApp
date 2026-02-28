@@ -16,11 +16,15 @@ router.get("/me", auth, async (req, res, next) => {
   }
 });
 
-// Update status
-router.patch("/status", auth, async (req, res, next) => {
+// Update profile (status & username)
+router.patch("/profile", auth, async (req, res, next) => {
   try {
-    const { status } = req.body;
-    const user = await User.findByIdAndUpdate(req.user.id, { status }, { new: true });
+    const { status, username } = req.body;
+    const updates = {};
+    if (status !== undefined) updates.status = status;
+    if (username !== undefined) updates.username = username;
+
+    const user = await User.findByIdAndUpdate(req.user.id, updates, { new: true });
     res.json({ user: user.toSafeJSON() });
   } catch (e) {
     next(e);
@@ -100,7 +104,23 @@ router.post("/unfriend", auth, async (req, res, next) => {
 router.post("/block", auth, async (req, res, next) => {
   try {
     const { userId } = req.body;
-    await User.findByIdAndUpdate(req.user.id, { $addToSet: { blockedUsers: userId } });
+    const meId = req.user.id;
+
+    // 1. Add to blockedUsers
+    await User.findByIdAndUpdate(meId, { $addToSet: { blockedUsers: userId } });
+
+    // 2. Automatically unfriend (professional style)
+    await User.findByIdAndUpdate(meId, { $pull: { friends: userId } });
+    await User.findByIdAndUpdate(userId, { $pull: { friends: meId } });
+
+    // 3. Delete any pending requests
+    await FriendRequest.deleteMany({
+      $or: [
+        { sender: meId, receiver: userId },
+        { sender: userId, receiver: meId }
+      ]
+    });
+
     res.json({ message: "User blocked" });
   } catch (e) {
     next(e);

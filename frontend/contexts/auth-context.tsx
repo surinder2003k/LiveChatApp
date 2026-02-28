@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: clerkToken, // Sending clerk token to sync endpoint
         body: {
           email: clerkUser.primaryEmailAddress?.emailAddress,
-          username: finalUsername,
+          // username: finalUsername, // STOP syncing name from Clerk
           avatar: clerkUser.imageUrl
         }
       });

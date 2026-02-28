@@ -258,9 +258,9 @@ export default function ChatPage() {
 
   async function handleSocialAction(action: string, data?: any) {
     try {
-      if (action === "updateStatus") {
-        await apiFetch("/api/users/status", { method: "PATCH", body: data, token });
-        toast.success("Status updated");
+      if (action === "updateProfile") {
+        await apiFetch("/api/users/profile", { method: "PATCH", body: data, token });
+        toast.success("Profile updated");
       } else if (action === "addFriend") {
         await apiFetch("/api/users/friend-request", { method: "POST", body: { receiverId: activeProfile?._id }, token });
         toast.success("Friend request sent");

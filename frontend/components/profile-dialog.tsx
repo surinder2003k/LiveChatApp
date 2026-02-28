@@ -28,22 +28,26 @@ export function ProfileDialog({
     onClose: () => void;
     onAction: (action: string, data?: any) => Promise<void>;
 }) {
-    const [editingStatus, setEditingStatus] = React.useState(false);
+    const [editingProfile, setEditingProfile] = React.useState(false);
     const [newStatus, setNewStatus] = React.useState(user?.status || "");
+    const [newUsername, setNewUsername] = React.useState(user?.username || "");
     const [loading, setLoading] = React.useState(false);
 
     const isMe = currentUser?._id === user?._id;
 
     React.useEffect(() => {
-        if (user) setNewStatus(user.status || "");
+        if (user) {
+            setNewStatus(user.status || "");
+            setNewUsername(user.username || "");
+        }
     }, [user]);
 
     if (!user) return null;
 
-    async function handleStatusUpdate() {
+    async function handleProfileUpdate() {
         setLoading(true);
-        await onAction("updateStatus", { status: newStatus });
-        setEditingStatus(false);
+        await onAction("updateProfile", { status: newStatus, username: newUsername });
+        setEditingProfile(false);
         setLoading(false);
     }
 
@@ -91,30 +95,49 @@ export function ProfileDialog({
                     </div>
 
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold">{user.username}</DialogTitle>
-                        <div className="text-sm text-muted-foreground">{user.email}</div>
+                        {editingProfile ? (
+                            <div className="space-y-2 mb-2">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-primary/60 text-left">Display Name</div>
+                                <Input
+                                    value={newUsername}
+                                    onChange={e => setNewUsername(e.target.value)}
+                                    placeholder="Enter your name"
+                                    className="h-10 bg-background/50 border-primary/20 text-center font-bold text-lg"
+                                />
+                            </div>
+                        ) : (
+                            <>
+                                <DialogTitle className="text-2xl font-bold">{user.username}</DialogTitle>
+                                <div className="text-sm text-muted-foreground">{user.email}</div>
+                            </>
+                        )}
                     </DialogHeader>
 
                     <div className="mt-6 space-y-4">
                         <div className="group relative rounded-xl bg-muted/30 p-4 transition-colors hover:bg-muted/50">
                             <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-primary/60">Status</div>
-                            {editingStatus ? (
-                                <div className="flex gap-2">
+                            {editingProfile ? (
+                                <div className="space-y-3">
                                     <Input
                                         value={newStatus}
                                         onChange={e => setNewStatus(e.target.value)}
                                         className="h-8 bg-background/50 border-primary/20"
-                                        autoFocus
+                                        placeholder="Hey there! I am using ChatApp."
                                     />
-                                    <Button size="icon" className="h-8 w-8 shrink-0" onClick={handleStatusUpdate} disabled={loading}>
-                                        <Check className="h-4 w-4" />
-                                    </Button>
+                                    <div className="flex gap-2">
+                                        <Button className="flex-1 h-9 bg-primary" onClick={handleProfileUpdate} disabled={loading}>
+                                            <Check className="h-4 w-4 mr-2" /> Save Changes
+                                        </Button>
+                                        <Button variant="ghost" className="h-9" onClick={() => setEditingProfile(false)}>
+                                            Cancel
+                                        </Button>
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center gap-2">
                                     <p className="italic text-foreground/90">&quot;{user.status || "No status set"}&quot;</p>
                                     {isMe && (
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditingStatus(true)}>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditingProfile(true)}>
                                             <Edit2 className="h-3 w-3" />
                                         </Button>
                                     )}
