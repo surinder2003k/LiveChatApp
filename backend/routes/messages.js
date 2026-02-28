@@ -13,6 +13,12 @@ const User = require("../models/User");
 const router = express.Router();
 
 // Cloudinary Configuration
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET;
+
+if (!isCloudinaryConfigured) {
+  console.warn("[WARNING] Cloudinary environment variables are missing!");
+}
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -33,10 +39,15 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-router.post("/upload", auth, upload.single("image"), (req, res) => {
-  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
-  // req.file.path will contain the Cloudinary secure URL
-  res.json({ url: req.file.path, success: true });
+router.post("/upload", auth, (req, res, next) => {
+  upload.single("image")(req, res, (err) => {
+    if (err) {
+      console.error("Cloudinary upload error:", err);
+      return res.status(500).json({ message: err.message || "Cloudinary upload failed", success: false });
+    }
+    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    res.json({ url: req.file.path, success: true });
+  });
 });
 
 const sendSchema = z.object({
