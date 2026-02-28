@@ -85,7 +85,7 @@ export function ProfileDialog({
                                 </div>
                             ) : (
                                 <div className="flex items-center justify-center gap-2">
-                                    <p className="italic text-foreground/90">"{user.status || "No status set"}"</p>
+                                    <p className="italic text-foreground/90">&quot;{user.status || "No status set"}&quot;</p>
                                     {isMe && (
                                         <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setEditingStatus(true)}>
                                             <Edit2 className="h-3 w-3" />

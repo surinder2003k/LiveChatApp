@@ -208,7 +208,7 @@ export default function ChatPage() {
       socket.off("friendDecline", onSocialRefresh);
       socket.off("chatCleared", onChatCleared);
     };
-  }, [socket, onMsg, onNotification]);
+  }, [socket, onMsg, onNotification, token]);
 
   // Merge online status into users list
   const usersWithStatus = React.useMemo(() => {
