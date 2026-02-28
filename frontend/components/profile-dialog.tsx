@@ -39,8 +39,9 @@ export function ProfileDialog({
         if (user) {
             setNewStatus(user.status || "");
             setNewUsername(user.username || "");
+            setEditingProfile(false); // Reset edit mode when viewing a new user
         }
-    }, [user]);
+    }, [user, isOpen]);
 
     if (!user) return null;
 
@@ -108,9 +109,9 @@ export function ProfileDialog({
                         ) : (
                             <>
                                 <DialogTitle className="text-2xl font-bold">{user.username}</DialogTitle>
-                                {(isMe || currentUser?.role === "admin") && user.email && (
+                                {(isMe || currentUser?.role === "admin") && user.email ? (
                                     <div className="text-sm text-muted-foreground">{user.email}</div>
-                                )}
+                                ) : null}
                             </>
                         )}
                     </DialogHeader>
