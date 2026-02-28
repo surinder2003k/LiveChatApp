@@ -6,6 +6,7 @@ import { CheckCheck, Pencil, Trash2, Smile, Maximize2 } from "lucide-react";
 import { formatPreciseTime } from "@/lib/time";
 import { ImageViewer } from "@/components/image-viewer";
 import { cn } from "@/lib/utils";
+import { env } from "@/lib/env";
 import type { Message } from "@/lib/types";
 import {
   ContextMenu,
@@ -40,6 +41,11 @@ export function MessageBubble({
   const [viewerOpen, setViewerOpen] = React.useState(false);
   const [editText, setEditText] = React.useState(message.text);
   const ts = typeof message.timestamp === "string" ? new Date(message.timestamp) : new Date(message.timestamp);
+
+  const getFullUrl = (path: string) => {
+    if (path.startsWith("http")) return path;
+    return `${env.backendUrl}${path}`;
+  };
 
   const handleEditSubmit = () => {
     if (editText.trim() && editText !== message.text) {
@@ -92,7 +98,7 @@ export function MessageBubble({
                     onClick={() => setViewerOpen(true)}
                   >
                     <img
-                      src={message.image}
+                      src={getFullUrl(message.image)}
                       alt="Shared content"
                       className="max-w-full max-h-[300px] object-cover transition-transform duration-500 group-hover/img:scale-110"
                     />
@@ -175,7 +181,7 @@ export function MessageBubble({
 
       {message.image && (
         <ImageViewer
-          src={message.image}
+          src={getFullUrl(message.image)}
           isOpen={viewerOpen}
           onClose={() => setViewerOpen(false)}
         />
