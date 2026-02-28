@@ -59,13 +59,20 @@ router.post("/toggle-role", auth, isAdmin, async (req, res, next) => {
 router.delete("/user/:id", auth, isAdmin, async (req, res, next) => {
     try {
         const { id } = req.params;
-        await User.findByIdAndDelete(id);
+        console.log(`[ADMIN] Delete request for user ID: ${id}`);
+        const user = await User.findByIdAndDelete(id);
+        if (!user) {
+            console.log(`[ADMIN] User not found for deletion: ${id}`);
+            return res.status(404).json({ message: "User not found" });
+        }
         // Cleanup related data
         await Message.deleteMany({ $or: [{ senderId: id }, { receiverId: id }] });
         await FriendRequest.deleteMany({ $or: [{ sender: id }, { receiver: id }] });
 
+        console.log(`[ADMIN] Successfully deleted user: ${user.username}`);
         res.json({ message: "User and all associated data deleted successfully" });
     } catch (e) {
+        console.error(`[ADMIN] Delete error for user ${req.params.id}:`, e);
         next(e);
     }
 });
