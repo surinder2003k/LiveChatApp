@@ -371,6 +371,7 @@ export default function ChatPage() {
             activeUserId={activeUser?._id || null}
             onSelectUser={openChat}
             onProfileOpen={setActiveProfile}
+            currentUser={user}
           />
         </div>
 
@@ -402,6 +403,7 @@ export default function ChatPage() {
                     activeUserId={activeUser?._id || null}
                     onSelectUser={openChat}
                     onProfileOpen={(u) => { setActiveProfile(u); setMobileOpen(false); }}
+                    currentUser={user}
                   />
                 </div>
               </motion.div>
