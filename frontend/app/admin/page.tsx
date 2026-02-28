@@ -20,6 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -27,6 +28,20 @@ export default function AdminDashboard() {
     const [stats, setStats] = React.useState<any>(null);
     const [users, setUsers] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+    const [confirmState, setConfirmState] = React.useState<{
+        open: boolean;
+        title: string;
+        description: string;
+        onConfirm: () => void;
+        variant: "default" | "destructive";
+    }>({
+        open: false,
+        title: "",
+        description: "",
+        onConfirm: () => { },
+        variant: "default",
+    });
+    const [deleteLoading, setDeleteLoading] = React.useState(false);
 
     const fetchData = React.useCallback(async () => {
         if (!token) return;
@@ -70,17 +85,31 @@ export default function AdminDashboard() {
     }
 
     async function deleteUser(userId: string) {
-        if (!confirm("Are you SURE? This deletes the user and ALL their chats forever.")) return;
-        try {
-            const res = await apiFetch<any>(`/api/admin/user/${userId}`, {
-                method: "DELETE",
-                token
-            });
-            toast.success(res.message);
-            fetchData();
-        } catch (e: any) {
-            toast.error(e.message);
-        }
+        console.log(`[ADMIN UI 1.2] Attempting delete: ${userId}`);
+        setConfirmState({
+            open: true,
+            title: "Delete User?",
+            description: "Are you SURE? This deletes the user and ALL their chats forever. This action is irreversible.",
+            variant: "destructive",
+            onConfirm: async () => {
+                try {
+                    setDeleteLoading(true);
+                    console.log(`[ADMIN UI 1.2] API DELETE: ${userId}`);
+                    const res = await apiFetch<any>(`/api/admin/user/${userId}`, {
+                        method: "DELETE",
+                        token
+                    });
+                    toast.success(res.message);
+                    setConfirmState(p => ({ ...p, open: false }));
+                    fetchData();
+                } catch (e: any) {
+                    console.error("[ADMIN UI] Delete failed:", e);
+                    toast.error(e.message);
+                } finally {
+                    setDeleteLoading(false);
+                }
+            }
+        });
     }
 
     if (loading) {
@@ -208,6 +237,21 @@ export default function AdminDashboard() {
                         </table>
                     </CardContent>
                 </Card>
+            </div>
+            <ConfirmDialog
+                open={confirmState.open}
+                onOpenChange={(open) => setConfirmState(p => ({ ...p, open }))}
+                title={confirmState.title}
+                description={confirmState.description}
+                onConfirm={confirmState.onConfirm}
+                variant={confirmState.variant}
+                loading={deleteLoading}
+            />
+
+            {/* Version Footer */}
+            <div className="max-w-7xl mx-auto py-8 border-t border-white/5 flex justify-between items-center text-[10px] text-gray-600 font-mono uppercase tracking-[0.2em]">
+                <span>System Secure Protocol v1.2</span>
+                <span>Dashboard Live Status: Active</span>
             </div>
         </div>
     );

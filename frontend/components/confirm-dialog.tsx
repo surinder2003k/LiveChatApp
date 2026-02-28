@@ -21,6 +21,7 @@ interface ConfirmDialogProps {
     variant?: "default" | "destructive";
     confirmText?: string;
     cancelText?: string;
+    loading?: boolean;
 }
 
 export function ConfirmDialog({
@@ -32,6 +33,7 @@ export function ConfirmDialog({
     variant = "default",
     confirmText = "Confirm",
     cancelText = "Cancel",
+    loading = false,
 }: ConfirmDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,13 +58,16 @@ export function ConfirmDialog({
                         {cancelText}
                     </Button>
                     <Button
-                        className={`flex-1 font-bold shadow-lg ${variant === "destructive" ? "bg-red-600 hover:bg-red-700" : "bg-primary hover:bg-primary/90"}`}
-                        onClick={() => {
-                            onConfirm();
-                            onOpenChange(false);
-                        }}
+                        className={`flex-1 font-bold shadow-lg ${variant === "destructive" ? "bg-red-600 hover:bg-red-700 font-bold" : "bg-primary hover:bg-primary/90"}`}
+                        onClick={onConfirm}
+                        disabled={loading}
                     >
-                        {confirmText}
+                        {loading ? (
+                            <div className="flex items-center gap-2">
+                                <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Processing...
+                            </div>
+                        ) : confirmText}
                     </Button>
                 </DialogFooter>
             </DialogContent>
