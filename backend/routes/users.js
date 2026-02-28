@@ -53,6 +53,12 @@ router.post("/unblock", auth, async (req, res, next) => {
   try {
     const { userId } = req.body;
     await User.findByIdAndUpdate(req.user.id, { $pull: { blockedUsers: userId } });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(userId)).emit("blockUpdate", { from: req.user.id });
+    }
+
     res.json({ message: "User unblocked" });
   } catch (e) {
     next(e);
@@ -72,6 +78,11 @@ router.post("/friend-accept", auth, async (req, res, next) => {
 
     await User.findByIdAndUpdate(request.sender, { $addToSet: { friends: request.receiver } });
     await User.findByIdAndUpdate(request.receiver, { $addToSet: { friends: request.sender } });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(request.sender)).emit("friendAccept", { from: req.user.id });
+    }
 
     res.json({ message: "Request accepted" });
   } catch (e) {
@@ -94,6 +105,11 @@ router.post("/unfriend", auth, async (req, res, next) => {
         { sender: userId, receiver: meId }
       ]
     });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(userId)).emit("unfriend", { from: meId });
+    }
 
     res.json({ message: "Unfriended successfully" });
   } catch (e) {
@@ -120,6 +136,11 @@ router.post("/block", auth, async (req, res, next) => {
         { sender: userId, receiver: meId }
       ]
     });
+
+    const io = req.app.get("io");
+    if (io) {
+      io.to(String(userId)).emit("blockUpdate", { from: meId });
+    }
 
     res.json({ message: "User blocked" });
   } catch (e) {

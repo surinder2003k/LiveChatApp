@@ -194,6 +194,8 @@ export default function ChatPage() {
     socket.on("friendAccept", onSocialRefresh);
     socket.on("friendCancel", onSocialRefresh);
     socket.on("friendDecline", onSocialRefresh);
+    socket.on("unfriend", onSocialRefresh);
+    socket.on("blockUpdate", onSocialRefresh);
     socket.on("chatCleared", onChatCleared);
 
     return () => {
@@ -209,6 +211,8 @@ export default function ChatPage() {
       socket.off("friendAccept", onSocialRefresh);
       socket.off("friendCancel", onSocialRefresh);
       socket.off("friendDecline", onSocialRefresh);
+      socket.off("unfriend", onSocialRefresh);
+      socket.off("blockUpdate", onSocialRefresh);
       socket.off("chatCleared", onChatCleared);
     };
   }, [socket, onMsg, onNotification, token]);
