@@ -12,6 +12,7 @@ import { TypingIndicator } from "@/components/typing-indicator";
 import { MessageBubble } from "@/components/message-bubble";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/auth-context";
 import type { Message, User } from "@/lib/types";
 
 function initials(name: string) {
@@ -50,6 +51,7 @@ export function ChatWindow({
   onProfileOpen?: (user: User) => void;
   onClearChat?: () => void;
 }) {
+  const { token } = useAuth();
   const [text, setText] = React.useState("");
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
@@ -119,8 +121,7 @@ export function ChatWindow({
       const res = await apiFetch<any>("/api/messages/upload", {
         method: "POST",
         body: formData,
-        // apiFetch will handle the token if it's passed, but we need to ensure it's there
-        // Note: apiFetch in this project seems to take token from its options
+        token: token // Explicitly passing the token
       });
 
       if (res.success) {

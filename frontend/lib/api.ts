@@ -6,11 +6,22 @@ export async function apiFetch<T>(
 ): Promise<T> {
   const url = `${env.backendUrl}${path}`;
   const headers = new Headers(opts.headers);
-  headers.set("Content-Type", "application/json");
-  if (opts.token) headers.set("Authorization", `Bearer ${opts.token}`);
+
+  if (opts.token) {
+    headers.set("Authorization", `Bearer ${opts.token}`);
+  }
+
+  const isFormData = opts.body instanceof FormData;
+  const isBlob = opts.body instanceof Blob;
+
+  // IMPORTANT: For FormData, we must NOT set Content-Type
+  // The browser will automatically set it with the correct boundary.
+  if (!isFormData && !isBlob) {
+    headers.set("Content-Type", "application/json");
+  }
 
   const body =
-    opts.body && typeof opts.body === "object" && !(opts.body instanceof FormData) && !(opts.body instanceof Blob)
+    opts.body && typeof opts.body === "object" && !isFormData && !isBlob
       ? JSON.stringify(opts.body)
       : opts.body;
 
@@ -24,4 +35,3 @@ export async function apiFetch<T>(
   }
   return data as T;
 }
-
