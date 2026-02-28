@@ -113,38 +113,48 @@ export function ChatWindow({
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
 
     // 1. Validation
     const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Only JPG, PNG and WEBP are supported.");
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("File size must be under 5MB.");
-      return;
+    for (const file of files) {
+      if (!allowedTypes.includes(file.type)) {
+        toast.error(`"${file.name}" is not a supported format.`);
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`"${file.name}" is over 5MB.`);
+        return;
+      }
     }
 
-    // 2. Upload
+    // 2. Upload and Send (Parallel)
     try {
       setUploading(true);
-      const formData = new FormData();
-      formData.append("image", file);
+      if (files.length > 1) toast.info(`Uploading ${files.length} images...`);
 
-      // Using the local backend's upload endpoint
-      const res = await apiFetch<any>("/api/messages/upload", {
-        method: "POST",
-        body: formData,
-        token: token // Explicitly passing the token
+      const uploadPromises = files.map(async (file) => {
+        const formData = new FormData();
+        formData.append("image", file);
+
+        const res = await apiFetch<any>("/api/messages/upload", {
+          method: "POST",
+          body: formData,
+          token: token
+        });
+
+        if (res.success) {
+          onSend("", res.url);
+        } else {
+          throw new Error(res.message || "Upload failed");
+        }
       });
 
-      if (res.success) {
-        onSend("", res.url);
-      }
+      await Promise.all(uploadPromises);
+      if (files.length > 1) toast.success("All images sent!");
     } catch (err: any) {
-      toast.error(err.message || "Upload failed");
+      toast.error(err.message || "Some uploads failed");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -245,6 +255,7 @@ export function ChatWindow({
                 ref={fileInputRef}
                 className="hidden"
                 accept="image/jpeg,image/png,image/webp"
+                multiple
                 onChange={handleFileSelect}
               />
               <Button
