@@ -11,11 +11,13 @@ type AuthState = {
   token: string | null;
   user: User | null;
   loading: boolean;
+  error: string | null;
 };
 
 type AuthContextValue = AuthState & {
   logout: () => void;
   refreshMe: () => Promise<void>;
+  retrySync: () => void;
 };
 
 const AuthContext = React.createContext<AuthContextValue | null>(null);
@@ -27,12 +29,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = React.useState<AuthState>({
     token: null,
     user: null,
-    loading: true
+    loading: true,
+    error: null
   });
 
   const syncWithBackend = React.useCallback(async () => {
     if (!isSignedIn || !clerkUser) {
-      setState({ token: null, user: null, loading: false });
+      setState({ token: null, user: null, loading: false, error: null });
       return;
     }
 
@@ -53,10 +56,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       setTokenCookie(res.token);
-      setState({ token: res.token, user: res.user, loading: false });
-    } catch (e) {
+      setState({ token: res.token, user: res.user, loading: false, error: null });
+    } catch (e: any) {
       console.error("Auth sync error:", e);
-      setState({ token: null, user: null, loading: false });
+      setState({ token: null, user: null, loading: false, error: e?.message || "Authentication failed" });
     }
   }, [isSignedIn, clerkUser, getToken]);
 
@@ -70,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await signOut();
     disconnectSocket();
     clearTokenCookie();
-    setState({ token: null, user: null, loading: false });
+    setState({ token: null, user: null, loading: false, error: null });
   }, [signOut]);
 
   const refreshMe = React.useCallback(async () => {
@@ -86,9 +89,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => ({
       ...state,
       logout,
-      refreshMe
+      refreshMe,
+      retrySync: syncWithBackend
     }),
-    [state, logout, refreshMe]
+    [state, logout, refreshMe, syncWithBackend]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
