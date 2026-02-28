@@ -239,9 +239,9 @@ export default function ChatPage() {
     socket.emit("stopTyping", { otherUserId: activeUser._id });
   }
 
-  function onSend(text: string) {
+  function onSend(text: string, image?: string) {
     if (!socket || !activeUser) return;
-    socket.emit("sendMessage", { to: activeUser._id, text, tempId: crypto.randomUUID?.() });
+    socket.emit("sendMessage", { to: activeUser._id, text, image, tempId: crypto.randomUUID?.() });
   }
 
   const onEditMessage = React.useCallback((messageId: string, newText: string) => {

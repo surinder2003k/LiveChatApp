@@ -1,14 +1,37 @@
-const express = require("express");
-const { z } = require("zod");
-const mongoose = require("mongoose");
+const multer = require("multer");
+const path = require("path");
 
 const { auth } = require("../middleware/auth");
 const Message = require("../models/Message");
 
 const router = express.Router();
 
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ["image/jpeg", "image/png", "image/webp"];
+    if (allowed.includes(file.mimetype)) cb(null, true);
+    else cb(new Error("Only JPG, PNG, WEBP allowed"), false);
+  }
+});
+
+router.post("/upload", auth, upload.single("image"), (req, res) => {
+  if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+  res.json({ url: `/uploads/${req.file.filename}`, success: true });
+});
+
 const sendSchema = z.object({
-  text: z.string().min(1).max(2000)
+  text: z.string().max(2000).optional(),
+  image: z.string().optional()
 });
 
 router.get("/:userId", auth, async (req, res, next) => {

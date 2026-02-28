@@ -7,6 +7,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const mongoose = require("mongoose");
+const fs = require("fs-extra");
+const path = require("path");
 
 const authRoutes = require("./routes/auth");
 const usersRoutes = require("./routes/users");
@@ -80,6 +82,10 @@ async function start() {
       legacyHeaders: false,
     })
   );
+
+  const uploadDir = path.join(__dirname, "uploads");
+  fs.ensureDirSync(uploadDir);
+  app.use("/uploads", express.static(uploadDir));
 
   app.get("/health", (_req, res) => res.json({ ok: true }));
   app.use("/api/auth", authRoutes);

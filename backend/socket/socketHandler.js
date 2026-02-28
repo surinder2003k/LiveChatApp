@@ -74,16 +74,21 @@ function initSocket(server, { corsOrigins }) {
       socket.to(room).emit("stopTyping", { from: userId });
     });
 
-    socket.on("sendMessage", async ({ to, text, tempId }) => {
+    socket.on("sendMessage", async ({ to, text, image, tempId }) => {
       try {
         if (!mongoose.isValidObjectId(to)) return;
-        if (typeof text !== "string" || !text.trim()) return;
 
-        const trimmed = text.trim().slice(0, 2000);
+        const type = image ? "image" : "text";
+        const trimmedText = text ? text.trim().slice(0, 2000) : "";
+
+        if (type === "text" && !trimmedText) return;
+
         const msg = await Message.create({
           senderId: userId,
           receiverId: to,
-          text: trimmed,
+          text: trimmedText,
+          image: image || null,
+          type: type,
           timestamp: new Date(),
           seen: false
         });
@@ -97,6 +102,7 @@ function initSocket(server, { corsOrigins }) {
           io.to(sid).emit("messageNotification", payload);
         });
       } catch (_e) {
+        console.error("Socket send error:", _e);
         socket.emit("errorMessage", { message: "Failed to send message" });
       }
     });

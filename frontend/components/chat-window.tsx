@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { SendHorizontal, UserPlus, XCircle, Trash2 } from "lucide-react";
+import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { MessageBubble } from "@/components/message-bubble";
+import { apiFetch } from "@/lib/api";
+import { toast } from "sonner";
 import type { Message, User } from "@/lib/types";
 
 function initials(name: string) {
@@ -41,7 +43,7 @@ export function ChatWindow({
   typingLabel: string | null;
   onTypingStart: () => void;
   onTypingStop: () => void;
-  onSend: (text: string) => void;
+  onSend: (text: string, image?: string) => void;
   onEdit: (id: string, text: string) => void;
   onUnsend: (id: string) => void;
   onReact: (id: string, emoji: string) => void;
@@ -49,6 +51,8 @@ export function ChatWindow({
   onClearChat?: () => void;
 }) {
   const [text, setText] = React.useState("");
+  const [uploading, setUploading] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const listRef = React.useRef<HTMLDivElement | null>(null);
   const typingTimeout = React.useRef<number | null>(null);
 
@@ -88,6 +92,46 @@ export function ChatWindow({
     onSend(t);
     setText("");
     onTypingStop();
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // 1. Validation
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Only JPG, PNG and WEBP are supported.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size must be under 5MB.");
+      return;
+    }
+
+    // 2. Upload
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("image", file);
+
+      // Using the local backend's upload endpoint
+      const res = await apiFetch<any>("/api/messages/upload", {
+        method: "POST",
+        body: formData,
+        // apiFetch will handle the token if it's passed, but we need to ensure it's there
+        // Note: apiFetch in this project seems to take token from its options
+      });
+
+      if (res.success) {
+        onSend("", res.url);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   }
 
   if (!other) {
@@ -179,6 +223,22 @@ export function ChatWindow({
             </div>
           ) : other.friendshipStatus === "accepted" ? (
             <>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                disabled={uploading}
+                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+              </Button>
               <Input
                 value={text}
                 onChange={(e) => handleChange(e.target.value)}

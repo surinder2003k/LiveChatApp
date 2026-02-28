@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCheck, Pencil, Trash2, Smile } from "lucide-react";
+import { CheckCheck, Pencil, Trash2, Smile, Maximize2 } from "lucide-react";
 import { formatPreciseTime } from "@/lib/time";
+import { ImageViewer } from "@/components/image-viewer";
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/types";
 import {
@@ -36,6 +37,7 @@ export function MessageBubble({
   onReact?: (id: string, emoji: string) => void;
 }) {
   const [editing, setEditing] = React.useState(false);
+  const [viewerOpen, setViewerOpen] = React.useState(false);
   const [editText, setEditText] = React.useState(message.text);
   const ts = typeof message.timestamp === "string" ? new Date(message.timestamp) : new Date(message.timestamp);
 
@@ -83,8 +85,29 @@ export function MessageBubble({
                 </div>
               </div>
             ) : (
-              <div className="whitespace-pre-wrap break-words text-[14.5px] leading-relaxed tracking-wide font-medium">
-                {message.text}
+              <div className="space-y-2">
+                {message.type === "image" && message.image && (
+                  <div
+                    className="relative cursor-pointer overflow-hidden rounded-lg group/img"
+                    onClick={() => setViewerOpen(true)}
+                  >
+                    <img
+                      src={message.image}
+                      alt="Shared content"
+                      className="max-w-full max-h-[300px] object-cover transition-transform duration-500 group-hover/img:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                      <div className="bg-white/20 backdrop-blur-md p-2 rounded-full">
+                        <Maximize2 className="h-5 w-5 text-white" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {message.text && (
+                  <div className="whitespace-pre-wrap break-words text-[14.5px] leading-relaxed tracking-wide font-medium">
+                    {message.text}
+                  </div>
+                )}
               </div>
             )}
 
@@ -149,6 +172,14 @@ export function MessageBubble({
           </PopoverContent>
         </Popover>
       </div>
+
+      {message.image && (
+        <ImageViewer
+          src={message.image}
+          isOpen={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+        />
+      )}
     </div>
   );
 }

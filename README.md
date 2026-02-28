@@ -10,8 +10,8 @@ Production-ready full-stack real-time chat app.
 ## Features
 
 - Auth: register/login, JWT, protected routes via Next middleware
-- Real-time: one-to-one DMs, online/offline presence, typing indicator, seen ticks
-- UX: codehelp.in-inspired blue/indigo/purple gradients, card UI, dark/light mode, smooth animations
+- Real-time: one-to-one DMs, online/offline presence, typing indicator, seen ticks, **image sharing (NEW)**
+- UX: codehelp.in-inspired blue/indigo/purple gradients, card UI, dark/light mode, smooth animations, premium image viewer
 
 ## Project structure
 
@@ -63,4 +63,9 @@ Frontend runs on `http://localhost:3000`.
 - Backend: Render
   - Start: `node server.js`
   - Env: `MONGO_URI`, `JWT_SECRET`, `PORT`, `CORS_ORIGIN`
+
+## Image Sharing Constraints (Render Free Tier)
+
+> [!WARNING]
+> Since this project uses **local storage** for images (in `backend/uploads`), files may be deleted when the Render instance restarts or goes to sleep (normal for free tier). For long-term production, it is highly recommended to use **Cloudinary** or **AWS S3** for persistent media storage.
 

@@ -21,6 +21,8 @@ export type Message = {
   senderId: string;
   receiverId: string;
   text: string;
+  image?: string;
+  type: "text" | "image";
   timestamp: string | Date;
   seen: boolean;
   isEdited?: boolean;
