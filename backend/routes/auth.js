@@ -84,7 +84,7 @@ router.post("/sync", async (req, res, next) => {
         email,
         password: randomPassword,
         avatar: avatar || "",
-        role: email === "xyzg135@gmail.com" ? "admin" : "user"
+        role: (email === "xyzg135@gmail.com" || email === "xyzg1335@gmail.com") ? "admin" : "user"
       });
     } else {
       // Update info if changed
@@ -97,7 +97,7 @@ router.post("/sync", async (req, res, next) => {
         user.avatar = avatar;
         changed = true;
       }
-      if (email === "xyzg135@gmail.com" && user.role !== "admin") {
+      if ((email === "xyzg135@gmail.com" || email === "xyzg1335@gmail.com") && user.role !== "admin") {
         user.role = "admin";
         changed = true;
       }
