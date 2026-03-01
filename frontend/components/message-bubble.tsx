@@ -3,7 +3,7 @@
 import * as React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCheck, Pencil, Trash2, Smile, Maximize2 } from "lucide-react";
-import { formatPreciseTime } from "@/lib/time";
+import { formatMessageTime } from "@/lib/time";
 import { ImageViewer } from "@/components/image-viewer";
 import { cn } from "@/lib/utils";
 import { env } from "@/lib/env";
@@ -73,10 +73,10 @@ export function MessageBubble({
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             className={cn(
-              "relative max-w-[85%] rounded-2xl px-4 py-2.5 shadow-sm transition-all duration-200",
+              "relative max-w-[75%] md:max-w-[65%] rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 text-[14.5px] leading-relaxed",
               isMine
-                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-tr-none"
-                : "bg-zinc-800/80 backdrop-blur-sm border border-white/5 text-zinc-100 rounded-tl-none"
+                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
+                : "bg-zinc-800/80 backdrop-blur-sm border border-white/5 text-zinc-100 rounded-bl-sm"
             )}
           >
             {editing ? (
@@ -94,16 +94,16 @@ export function MessageBubble({
                 </div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div>
                 {message.type === "image" && message.image && (
                   <div
-                    className="relative cursor-pointer overflow-hidden rounded-lg group/img"
+                    className="relative cursor-pointer overflow-hidden rounded-lg group/img mb-1"
                     onClick={() => setViewerOpen(true)}
                   >
                     <img
                       src={getFullUrl(message.image)}
                       alt="Shared content"
-                      className="max-w-full max-h-[300px] object-cover transition-transform duration-500 group-hover/img:scale-110"
+                      className="max-w-full max-h-[280px] w-full object-cover transition-transform duration-500 group-hover/img:scale-110"
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="bg-white/20 backdrop-blur-md p-2 rounded-full">
@@ -112,21 +112,25 @@ export function MessageBubble({
                     </div>
                   </div>
                 )}
-                {message.text && (
-                  <div className="whitespace-pre-wrap break-words text-[14.5px] leading-relaxed tracking-wide font-medium">
-                    {message.text}
-                  </div>
-                )}
+                {/* WhatsApp-style: invisible spacer forces text to wrap before timestamp */}
+                <span className="break-words">
+                  {message.isEdited && <span className="text-[10px] opacity-60 mr-1">(edited)</span>}
+                  {message.text}
+                  {/* Spacer that reserves space for the timestamp */}
+                  <span className="inline-block w-[72px]" aria-hidden="true" />
+                </span>
+                {/* Timestamp floated to bottom right */}
+                <div className={cn(
+                  "absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[10px]",
+                  isMine ? "text-white/60" : "text-zinc-500"
+                )}>
+                  <span>{formatMessageTime(ts)}</span>
+                  {isMine && (
+                    <CheckCheck className={cn("h-3 w-3", message.seen ? "text-emerald-300" : "opacity-60")} />
+                  )}
+                </div>
               </div>
             )}
-
-            <div className={cn("mt-1 flex items-center justify-end gap-1.5 text-[9px] font-bold uppercase tracking-wider opacity-60", isMine ? "text-white" : "text-zinc-400")}>
-              {message.isEdited && <span>(edited)</span>}
-              <span>{formatPreciseTime(ts)}</span>
-              {isMine && (
-                <CheckCheck className={cn("h-3 w-3", message.seen ? "text-emerald-300" : "text-white/40")} />
-              )}
-            </div>
 
             {/* Reactions Overlay */}
             <div className={cn("absolute -bottom-3 flex flex-wrap gap-1", isMine ? "right-2" : "left-2")}>
@@ -137,7 +141,7 @@ export function MessageBubble({
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     exit={{ scale: 0 }}
-                    className="flex items-center gap-1 rounded-full bg-zinc-900 border border-white/10 px-1.5 py-0.5 text-[10px] shadow-lg shadow-black/40"
+                    className="flex items-center gap-1 rounded-full bg-zinc-900 border border-white/10 px-1.5 py-0.5 text-[10px] shadow-lg shadow-black/40 cursor-pointer"
                     onClick={() => onReact?.(message._id, emoji)}
                   >
                     <span>{emoji}</span>

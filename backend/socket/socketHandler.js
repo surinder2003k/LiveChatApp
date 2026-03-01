@@ -28,8 +28,13 @@ function initSocket(server, { corsOrigins }) {
 
   async function setUserOnline(userId, online) {
     const update = { $set: { online } };
-    if (!online) update.$set.lastSeen = new Date();
+    const lastSeenTime = new Date();
+    if (!online) update.$set.lastSeen = lastSeenTime;
     await User.findByIdAndUpdate(userId, update).catch(() => { });
+    // Emit real-time lastSeen to all clients so they update instantly
+    if (!online) {
+      io.emit("userLastSeen", { userId, lastSeen: lastSeenTime.toISOString() });
+    }
   }
 
   io.use((socket, next) => {

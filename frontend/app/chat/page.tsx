@@ -194,6 +194,11 @@ export default function ChatPage() {
       }
     };
 
+    // Real-time lastSeen update when a friend goes offline
+    const onUserLastSeen = ({ userId, lastSeen }: { userId: string; lastSeen: string }) => {
+      setUsers(prev => prev.map(u => String(u._id) === String(userId) ? { ...u, lastSeen } : u));
+    };
+
     socket.on("friendRequest", onSocialRefresh);
     socket.on("friendAccept", onSocialRefresh);
     socket.on("friendCancel", onSocialRefresh);
@@ -201,6 +206,7 @@ export default function ChatPage() {
     socket.on("unfriend", onSocialRefresh);
     socket.on("blockUpdate", onSocialRefresh);
     socket.on("chatCleared", onChatCleared);
+    socket.on("userLastSeen", onUserLastSeen);
 
     return () => {
       socket.off("onlineUsers", onOnline);
@@ -218,6 +224,7 @@ export default function ChatPage() {
       socket.off("unfriend", onSocialRefresh);
       socket.off("blockUpdate", onSocialRefresh);
       socket.off("chatCleared", onChatCleared);
+      socket.off("userLastSeen", onUserLastSeen);
     };
   }, [socket, onMsg, onNotification, token]);
 
