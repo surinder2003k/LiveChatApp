@@ -451,6 +451,7 @@ export default function ChatPage() {
               onReact={onReactToMessage}
               onProfileOpen={setActiveProfile}
               onClearChat={() => handleSocialAction("clearChat")}
+              onOpenSidebar={() => setMobileOpen(true)}
             />
           ) : (
             <Card className="glass flex h-full items-center justify-center">

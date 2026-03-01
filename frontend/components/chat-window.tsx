@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile } from "lucide-react";
+import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile, Menu } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,7 +40,8 @@ export function ChatWindow({
   onUnsend,
   onReact,
   onProfileOpen,
-  onClearChat
+  onClearChat,
+  onOpenSidebar,
 }: {
   meId: string;
   other: User | null;
@@ -54,6 +55,7 @@ export function ChatWindow({
   onReact: (id: string, emoji: string) => void;
   onProfileOpen?: (user: User) => void;
   onClearChat?: () => void;
+  onOpenSidebar?: () => void;
 }) {
   const { token } = useAuth();
   const [text, setText] = React.useState("");
@@ -164,11 +166,30 @@ export function ChatWindow({
 
   if (!other) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="max-w-md text-center">
-          <div className="text-xl font-semibold">Pick a user to start chatting</div>
-          <div className="mt-2 text-sm text-muted-foreground">
-            Your real-time conversation will appear here with smooth animations and delivery status.
+      <div className="flex h-full items-center justify-center p-6 text-center">
+        <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-inner">
+            <UserPlus className="h-10 w-10" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-black tracking-tight text-foreground">Pick a user to start chatting</h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Your real-time conversation will appear here with smooth animations,
+              delivery status, and end-to-end simulated privacy.
+            </p>
+          </div>
+          <div className="pt-4">
+            <Button
+              size="lg"
+              onClick={onOpenSidebar}
+              className="md:hidden w-full max-w-[200px] h-12 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl shadow-indigo-500/20 hover:scale-105 transition-all group"
+            >
+              <Menu className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+              View Users List
+            </Button>
+            <p className="hidden md:block text-xs font-bold uppercase tracking-widest text-muted-foreground/40">
+              Select a contact from the sidebar to begin
+            </p>
           </div>
         </div>
       </div>
