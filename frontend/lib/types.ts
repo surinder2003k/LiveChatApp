@@ -4,6 +4,7 @@ export type User = {
   email: string;
   avatar?: string;
   online?: boolean;
+  lastSeen?: string | null;
   unreadCount?: number;
   status?: string;
   friends?: string[];

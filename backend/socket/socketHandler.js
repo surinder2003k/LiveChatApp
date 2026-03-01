@@ -27,7 +27,9 @@ function initSocket(server, { corsOrigins }) {
   }
 
   async function setUserOnline(userId, online) {
-    await User.findByIdAndUpdate(userId, { $set: { online } }).catch(() => { });
+    const update = { $set: { online } };
+    if (!online) update.$set.lastSeen = new Date();
+    await User.findByIdAndUpdate(userId, update).catch(() => { });
   }
 
   io.use((socket, next) => {

@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import type { Message, User } from "@/lib/types";
 import dynamic from "next/dynamic";
+import { formatLastSeen } from "@/lib/time";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -188,8 +189,8 @@ export function ChatWindow({
           <div>
             <div className="font-semibold">{other.username}</div>
             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span className={cn("h-2 w-2 rounded-full", other.online ? "bg-emerald-500 animate-pulse-subtle" : "bg-muted-foreground/40")} />
-              {other.online ? "Online" : "Offline"}
+              <span className={cn("h-2 w-2 rounded-full flex-shrink-0", other.online ? "bg-emerald-500 animate-pulse-subtle" : "bg-muted-foreground/40")} />
+              {other.online ? "Online" : formatLastSeen(other.lastSeen)}
             </div>
           </div>
         </div>

@@ -31,7 +31,7 @@ router.get("/stats", auth, isAdmin, async (req, res, next) => {
 router.get("/users", auth, isAdmin, async (req, res, next) => {
     try {
         const users = await User.find({})
-            .select("_id username email avatar online role status createdAt")
+            .select("_id username email avatar online lastSeen role status createdAt")
             .sort({ createdAt: -1 });
         res.json({ users });
     } catch (e) {

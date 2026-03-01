@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { formatLastSeen } from "@/lib/time";
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -177,7 +178,7 @@ export default function AdminDashboard() {
                                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">User</th>
                                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Email</th>
                                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Role</th>
-                                    <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Status</th>
+                                    <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Last Active</th>
                                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500">Joined</th>
                                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 text-right">Actions</th>
                                 </tr>
@@ -201,8 +202,10 @@ export default function AdminDashboard() {
                                         </td>
                                         <td className="p-4">
                                             <div className="flex items-center gap-2">
-                                                <div className={`h-2 w-2 rounded-full ${u.online ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-gray-600"}`} />
-                                                <span className="text-xs font-medium text-gray-400">{u.online ? "Online" : "Offline"}</span>
+                                                <div className={`h-2 w-2 rounded-full flex-shrink-0 ${u.online ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-gray-600"}`} />
+                                                <span className="text-xs font-medium text-gray-400">
+                                                    {u.online ? "Online" : formatLastSeen(u.lastSeen)}
+                                                </span>
                                             </div>
                                         </td>
                                         <td className="p-4 text-xs text-gray-500 font-medium">
