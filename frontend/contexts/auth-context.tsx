@@ -34,23 +34,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   });
 
   const syncWithBackend = React.useCallback(async () => {
+    // 1. If Clerk not ready, do nothing (keep loading: true from init)
+    if (!isLoaded) return;
+
+    // 2. If Clerk ready but not signed in
     if (!isSignedIn || !clerkUser) {
       setState({ token: null, user: null, loading: false, error: null });
       return;
     }
 
+    // 3. If signed in, start sync
+    // Set loading to true if we don't have a token/user yet or if we're re-syncing
+    setState((prev) => ({ ...prev, loading: true, error: null }));
+
     try {
-      // Get a token for our backend (we'll use the clerk token as the bearer)
       const clerkToken = await getToken();
       if (!clerkToken) throw new Error("No clerk token");
 
-      // Sign in / sync user to our mongo db
       const res = await apiFetch<{ token: string; user: User }>("/api/auth/sync", {
         method: "POST",
-        token: clerkToken, // Sending clerk token to sync endpoint
+        token: clerkToken,
         body: {
           email: clerkUser.primaryEmailAddress?.emailAddress,
-          // username: finalUsername, // STOP syncing name from Clerk
           avatar: clerkUser.imageUrl
         }
       });
@@ -61,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Auth sync error:", e);
       setState({ token: null, user: null, loading: false, error: e?.message || "Authentication failed" });
     }
-  }, [isSignedIn, clerkUser, getToken]);
+  }, [isLoaded, isSignedIn, clerkUser, getToken]);
 
   React.useEffect(() => {
     if (isLoaded) {

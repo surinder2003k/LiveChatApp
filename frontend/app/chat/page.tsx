@@ -424,7 +424,7 @@ export default function ChatPage() {
 
         {/* Chat */}
         <div className="flex-1 min-h-0 overflow-hidden md:h-[calc(100dvh-6rem)] shadow-2xl">
-          {authLoading ? (
+          {(authLoading || (!user && token)) ? (
             <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
               <div className="scale-125 mb-4 animate-pulse">
                 <Brand />
@@ -456,8 +456,12 @@ export default function ChatPage() {
           ) : (
             <Card className="glass flex h-full items-center justify-center">
               <div className="text-center space-y-4">
-                <p className="text-muted-foreground">Session expired or not signed in</p>
+                <p className="text-muted-foreground font-bold">Session expired or not signed in</p>
+                <p className="text-xs text-muted-foreground/60 max-w-[240px] mx-auto">
+                  We couldn't verify your session. Please try logging in again to continue.
+                </p>
                 <Button
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20"
                   onClick={() => {
                     logout();
                     router.push("/login");
