@@ -77,4 +77,69 @@ router.delete("/user/:id", auth, isAdmin, async (req, res, next) => {
     }
 });
 
+// Get all conversations for a user (Admin Chat Viewer)
+router.get("/conversations/:userId", auth, isAdmin, async (req, res, next) => {
+    try {
+        const { userId } = req.params;
+        if (!userId) return res.status(400).json({ message: "userId required" });
+
+        // Get all unique conversation partners
+        const sent = await Message.distinct("receiverId", { senderId: userId });
+        const received = await Message.distinct("senderId", { receiverId: userId });
+
+        // Merge unique partner IDs
+        const allPartnerIds = [...new Set([...sent.map(String), ...received.map(String)])];
+
+        // Get user info for each partner + last message + count
+        const conversations = await Promise.all(
+            allPartnerIds.map(async (partnerId) => {
+                const partner = await User.findById(partnerId).select("_id username avatar online lastSeen");
+                if (!partner) return null;
+                const count = await Message.countDocuments({
+                    $or: [
+                        { senderId: userId, receiverId: partnerId },
+                        { senderId: partnerId, receiverId: userId }
+                    ]
+                });
+                const lastMsg = await Message.findOne({
+                    $or: [
+                        { senderId: userId, receiverId: partnerId },
+                        { senderId: partnerId, receiverId: userId }
+                    ]
+                }).sort({ timestamp: -1 });
+                return { partner, messageCount: count, lastMessage: lastMsg };
+            })
+        );
+
+        res.json({
+            conversations: conversations.filter(Boolean).sort((a, b) =>
+                new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0)
+            )
+        });
+    } catch (e) {
+        next(e);
+    }
+});
+
+// Get full conversation between two users (Admin)
+router.get("/conversation", auth, isAdmin, async (req, res, next) => {
+    try {
+        const { userA, userB } = req.query;
+        if (!userA || !userB) return res.status(400).json({ message: "userA and userB required" });
+
+        const messages = await Message.find({
+            $or: [
+                { senderId: userA, receiverId: userB },
+                { senderId: userB, receiverId: userA }
+            ]
+        })
+            .sort({ timestamp: 1 })
+            .limit(500);
+
+        res.json({ messages });
+    } catch (e) {
+        next(e);
+    }
+});
+
 module.exports = router;

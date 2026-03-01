@@ -11,7 +11,11 @@ import {
     ArrowLeft,
     Activity,
     UserCheck,
-    UserX
+    UserX,
+    X,
+    ChevronRight,
+    Search,
+    Clock
 } from "lucide-react";
 import { apiFetch } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -21,7 +25,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ConfirmDialog } from "@/components/confirm-dialog";
-import { formatLastSeen } from "@/lib/time";
+import { cn } from "@/lib/utils";
+import { formatLastSeen, formatMessageTime } from "@/lib/time";
+import { MessageBubble } from "@/components/message-bubble";
+import { Input } from "@/components/ui/input";
 
 export default function AdminDashboard() {
     const router = useRouter();
@@ -29,6 +36,15 @@ export default function AdminDashboard() {
     const [stats, setStats] = React.useState<any>(null);
     const [users, setUsers] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
+
+    // Chat Viewer State
+    const [viewingUser, setViewingUser] = React.useState<any>(null);
+    const [conversations, setConversations] = React.useState<any[]>([]);
+    const [selectedPartner, setSelectedPartner] = React.useState<any>(null);
+    const [chatMessages, setChatMessages] = React.useState<any[]>([]);
+    const [chatLoading, setChatLoading] = React.useState(false);
+    const [convsLoading, setConvsLoading] = React.useState(false);
+
     const [confirmState, setConfirmState] = React.useState<{
         open: boolean;
         title: string;
@@ -86,7 +102,6 @@ export default function AdminDashboard() {
     }
 
     async function deleteUser(userId: string) {
-        console.log(`[ADMIN UI 1.2] Attempting delete: ${userId}`);
         setConfirmState({
             open: true,
             title: "Delete User?",
@@ -95,7 +110,6 @@ export default function AdminDashboard() {
             onConfirm: async () => {
                 try {
                     setDeleteLoading(true);
-                    console.log(`[ADMIN UI 1.2] API DELETE: ${userId}`);
                     const res = await apiFetch<any>(`/api/admin/user/${userId}`, {
                         method: "DELETE",
                         token
@@ -104,13 +118,43 @@ export default function AdminDashboard() {
                     setConfirmState(p => ({ ...p, open: false }));
                     fetchData();
                 } catch (e: any) {
-                    console.error("[ADMIN UI] Delete failed:", e);
                     toast.error(e.message);
                 } finally {
                     setDeleteLoading(false);
                 }
             }
         });
+    }
+
+    // Chat Viewer Functions
+    async function openChatViewer(u: any) {
+        setViewingUser(u);
+        setConversations([]);
+        setSelectedPartner(null);
+        setChatMessages([]);
+        setConvsLoading(true);
+        try {
+            const res = await apiFetch<any>(`/api/admin/conversations/${u._id}`, { token });
+            setConversations(res.conversations || []);
+        } catch (e: any) {
+            toast.error("Failed to fetch conversations");
+        } finally {
+            setConvsLoading(false);
+        }
+    }
+
+    async function loadFullChat(partner: any) {
+        setSelectedPartner(partner);
+        setChatMessages([]);
+        setChatLoading(true);
+        try {
+            const res = await apiFetch<any>(`/api/admin/conversation?userA=${viewingUser._id}&userB=${partner._id}`, { token });
+            setChatMessages(res.messages || []);
+        } catch (e: any) {
+            toast.error("Failed to load chat history");
+        } finally {
+            setChatLoading(false);
+        }
     }
 
     if (loading) {
@@ -216,6 +260,15 @@ export default function AdminDashboard() {
                                                 <Button
                                                     variant="ghost"
                                                     size="sm"
+                                                    onClick={() => openChatViewer(u)}
+                                                    title="View Chats"
+                                                    className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                                                >
+                                                    <MessageSquare className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
                                                     onClick={() => toggleRole(u._id)}
                                                     title={u.role === "admin" ? "Demote to User" : "Promote to Admin"}
                                                     disabled={u.email === "xyzg135@gmail.com"}
@@ -241,6 +294,135 @@ export default function AdminDashboard() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Chat Viewer Modal */}
+            {viewingUser && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+                    <div className="relative w-full max-w-6xl h-[85vh] bg-zinc-900 border border-white/10 rounded-[2rem] overflow-hidden flex flex-col shadow-2xl">
+                        {/* Modal Header */}
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between bg-zinc-900/50">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-primary/10 rounded-2xl">
+                                    <MessageSquare className="h-6 w-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-black">Chat History: {viewingUser.username}</h2>
+                                    <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{viewingUser.email}</p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="icon" onClick={() => setViewingUser(null)} className="rounded-full hover:bg-white/5">
+                                <X className="h-6 w-6" />
+                            </Button>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* Conversations List */}
+                            <div className="w-80 border-r border-white/5 bg-black/20 overflow-y-auto">
+                                <div className="p-4 border-b border-white/5 sticky top-0 bg-zinc-900/80 backdrop-blur-md z-10">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                                        <Input className="pl-9 h-9 bg-white/5 border-white/10 text-sm" placeholder="Search conversations..." />
+                                    </div>
+                                </div>
+
+                                {convsLoading ? (
+                                    <div className="p-4 space-y-4">
+                                        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-16 w-full rounded-xl" />)}
+                                    </div>
+                                ) : conversations.length === 0 ? (
+                                    <div className="p-8 text-center text-gray-500 text-sm italic">No conversations found.</div>
+                                ) : (
+                                    conversations.map((conv) => (
+                                        <button
+                                            key={conv.partner._id}
+                                            onClick={() => loadFullChat(conv.partner)}
+                                            className={cn(
+                                                "w-full p-4 flex items-center gap-3 transition-all border-b border-white/5 hover:bg-white/5 text-left",
+                                                selectedPartner?._id === conv.partner._id && "bg-primary/10 border-r-2 border-r-primary"
+                                            )}
+                                        >
+                                            <div className="relative">
+                                                <div className="h-10 w-10 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-gray-400 border border-white/10 overflow-hidden">
+                                                    {conv.partner.avatar ? <img src={conv.partner.avatar} className="w-full h-full object-cover" /> : conv.partner.username[0].toUpperCase()}
+                                                </div>
+                                                {conv.partner.online && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-black rounded-full" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex justify-between items-start">
+                                                    <span className="font-bold text-sm text-gray-200 truncate">{conv.partner.username}</span>
+                                                    <span className="text-[10px] text-gray-500">{formatMessageTime(conv.lastMessage?.timestamp || new Date())}</span>
+                                                </div>
+                                                <p className="text-xs text-gray-500 truncate mt-0.5">{conv.lastMessage?.text || (conv.lastMessage?.image ? "Sent a photo" : "No messages")}</p>
+                                                <div className="mt-1 flex items-center gap-2">
+                                                    <span className="text-[9px] font-black uppercase tracking-tighter px-1.5 py-0.5 bg-white/5 rounded text-gray-400">{conv.messageCount} msgs</span>
+                                                </div>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 text-gray-700" />
+                                        </button>
+                                    ))
+                                )}
+                            </div>
+
+                            {/* Chat Messages Log */}
+                            <div className="flex-1 flex flex-col bg-black/40 relative">
+                                {!selectedPartner ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-gray-500 space-y-4">
+                                        <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5">
+                                            <MessageSquare className="h-12 w-12 text-gray-700" />
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-lg text-gray-400">Select a conversation</p>
+                                            <p className="text-sm max-w-xs mx-auto">Click on a contact to the left to view the full encrypted message history.</p>
+                                        </div>
+                                    </div>
+                                ) : chatLoading ? (
+                                    <div className="flex-1 flex items-center justify-center">
+                                        <div className="space-y-4 w-full max-w-md p-8">
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <div key={i} className={cn("flex", i % 2 === 0 ? "justify-end" : "justify-start")}>
+                                                    <Skeleton className="h-12 w-48 rounded-2xl" />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {/* Chat Log Header */}
+                                        <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-zinc-900/30 backdrop-blur-md">
+                                            <div className="h-8 w-8 rounded-full bg-zinc-800 flex items-center justify-center font-bold text-gray-400 border border-white/5 text-xs overflow-hidden">
+                                                {selectedPartner.avatar ? <img src={selectedPartner.avatar} className="w-full h-full object-cover" /> : selectedPartner.username[0].toUpperCase()}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-sm font-black text-gray-200">{viewingUser.username} & {selectedPartner.username}</h3>
+                                                <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" /> Secure Log View
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Messages Area */}
+                                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                                            {chatMessages.length === 0 ? (
+                                                <div className="h-full flex items-center justify-center text-gray-500 text-sm italic">Conversation is empty.</div>
+                                            ) : (
+                                                chatMessages.map(msg => (
+                                                    <MessageBubble
+                                                        key={msg._id}
+                                                        message={msg}
+                                                        isMine={String(msg.senderId) === String(viewingUser._id)}
+                                                    />
+                                                ))
+                                            )}
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <ConfirmDialog
                 open={confirmState.open}
                 onOpenChange={(open) => setConfirmState(p => ({ ...p, open }))}
@@ -253,7 +435,7 @@ export default function AdminDashboard() {
 
             {/* Version Footer */}
             <div className="max-w-7xl mx-auto py-8 border-t border-white/5 flex justify-between items-center text-[10px] text-gray-600 font-mono uppercase tracking-[0.2em]">
-                <span>System Secure Protocol v1.2</span>
+                <span>System Secure Protocol v1.3</span>
                 <span>Dashboard Live Status: Active</span>
             </div>
         </div>
