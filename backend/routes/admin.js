@@ -81,43 +81,65 @@ router.delete("/user/:id", auth, isAdmin, async (req, res, next) => {
 router.get("/conversations/:userId", auth, isAdmin, async (req, res, next) => {
     try {
         const { userId } = req.params;
-        if (!userId) return res.status(400).json({ message: "userId required" });
+        const mongoose = require("mongoose");
+
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid or missing userId" });
+        }
+
+        const userObjId = new mongoose.Types.ObjectId(userId);
 
         // Get all unique conversation partners
-        const sent = await Message.distinct("receiverId", { senderId: userId });
-        const received = await Message.distinct("senderId", { receiverId: userId });
+        const sent = await Message.distinct("receiverId", { senderId: userObjId });
+        const received = await Message.distinct("senderId", { receiverId: userObjId });
 
-        // Merge unique partner IDs
-        const allPartnerIds = [...new Set([...sent.map(String), ...received.map(String)])];
+        // Merge unique partner IDs, filter out any invalid/nulls
+        const allPartnerIds = [...new Set([...sent, ...received])]
+            .filter(id => id && mongoose.Types.ObjectId.isValid(String(id)));
 
         // Get user info for each partner + last message + count
         const conversations = await Promise.all(
             allPartnerIds.map(async (partnerId) => {
-                const partner = await User.findById(partnerId).select("_id username avatar online lastSeen");
-                if (!partner) return null;
-                const count = await Message.countDocuments({
-                    $or: [
-                        { senderId: userId, receiverId: partnerId },
-                        { senderId: partnerId, receiverId: userId }
-                    ]
-                });
-                const lastMsg = await Message.findOne({
-                    $or: [
-                        { senderId: userId, receiverId: partnerId },
-                        { senderId: partnerId, receiverId: userId }
-                    ]
-                }).sort({ timestamp: -1 });
-                return { partner, messageCount: count, lastMessage: lastMsg };
+                try {
+                    const pId = new mongoose.Types.ObjectId(String(partnerId));
+                    const partner = await User.findById(pId).select("_id username avatar online lastSeen");
+                    if (!partner) return null;
+
+                    const count = await Message.countDocuments({
+                        $or: [
+                            { senderId: userObjId, receiverId: pId },
+                            { senderId: pId, receiverId: userObjId }
+                        ]
+                    });
+
+                    const lastMsg = await Message.findOne({
+                        $or: [
+                            { senderId: userObjId, receiverId: pId },
+                            { senderId: pId, receiverId: userObjId }
+                        ]
+                    }).sort({ timestamp: -1 }).lean();
+
+                    return { partner, messageCount: count, lastMessage: lastMsg };
+                } catch (err) {
+                    console.error(`[ADMIN ERROR] Partner ${partnerId}:`, err);
+                    return null;
+                }
             })
         );
 
-        res.json({
-            conversations: conversations.filter(Boolean).sort((a, b) =>
-                new Date(b.lastMessage?.timestamp || 0) - new Date(a.lastMessage?.timestamp || 0)
-            )
+        const filtered = conversations.filter(Boolean);
+
+        // Sort by last message timestamp
+        filtered.sort((a, b) => {
+            const dateA = a.lastMessage?.timestamp ? new Date(a.lastMessage.timestamp).getTime() : 0;
+            const dateB = b.lastMessage?.timestamp ? new Date(b.lastMessage.timestamp).getTime() : 0;
+            return dateB - dateA;
         });
+
+        res.json({ conversations: filtered });
     } catch (e) {
-        next(e);
+        console.error(`[ADMIN CRITICAL ERROR]:`, e);
+        res.status(500).json({ message: e.message || "Failed to fetch conversations" });
     }
 });
 
@@ -125,7 +147,11 @@ router.get("/conversations/:userId", auth, isAdmin, async (req, res, next) => {
 router.get("/conversation", auth, isAdmin, async (req, res, next) => {
     try {
         const { userA, userB } = req.query;
-        if (!userA || !userB) return res.status(400).json({ message: "userA and userB required" });
+        const mongoose = require("mongoose");
+
+        if (!userA || !userB || !mongoose.Types.ObjectId.isValid(userA) || !mongoose.Types.ObjectId.isValid(userB)) {
+            return res.status(400).json({ message: "Valid userA and userB required" });
+        }
 
         const messages = await Message.find({
             $or: [
@@ -134,11 +160,13 @@ router.get("/conversation", auth, isAdmin, async (req, res, next) => {
             ]
         })
             .sort({ timestamp: 1 })
-            .limit(500);
+            .limit(1000)
+            .lean();
 
         res.json({ messages });
     } catch (e) {
-        next(e);
+        console.error(`[ADMIN ERROR] /conversation:`, e);
+        res.status(500).json({ message: e.message || "Server error" });
     }
 });
 

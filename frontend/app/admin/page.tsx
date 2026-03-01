@@ -137,7 +137,8 @@ export default function AdminDashboard() {
             const res = await apiFetch<any>(`/api/admin/conversations/${u._id}`, { token });
             setConversations(res.conversations || []);
         } catch (e: any) {
-            toast.error("Failed to fetch conversations");
+            console.error("[ADMIN] Conv fetch error:", e);
+            toast.error(e.message || "Failed to fetch conversations");
         } finally {
             setConvsLoading(false);
         }
@@ -151,7 +152,8 @@ export default function AdminDashboard() {
             const res = await apiFetch<any>(`/api/admin/conversation?userA=${viewingUser._id}&userB=${partner._id}`, { token });
             setChatMessages(res.messages || []);
         } catch (e: any) {
-            toast.error("Failed to load chat history");
+            console.error("[ADMIN] Chat fetch error:", e);
+            toast.error(e.message || "Failed to load chat history");
         } finally {
             setChatLoading(false);
         }
