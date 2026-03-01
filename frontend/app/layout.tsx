@@ -17,6 +17,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <ClerkProvider
+      afterSignInUrl="/chat"
+      afterSignUpUrl="/chat"
       appearance={{
         baseTheme: undefined,
         variables: {

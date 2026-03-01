@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PREFIXES = ["/chat"];
 const AUTH_PAGES = ["/login", "/register"];
+const HOME_PAGE = "/";
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -18,8 +19,8 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // 2. If already signed in (either Clerk or Backend) and trying to access /login, go to /chat
-  if (isAuthPage && (token || hasClerkSession)) {
+  // 2. If already signed in (either Clerk or Backend) and trying to access /login or /, go to /chat
+  if ((isAuthPage || pathname === HOME_PAGE) && (token || hasClerkSession)) {
     const url = req.nextUrl.clone();
     url.pathname = "/chat";
     return NextResponse.redirect(url);
@@ -29,6 +30,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/chat/:path*", "/login", "/register"]
+  matcher: ["/", "/chat/:path*", "/login", "/register"]
 };
 
