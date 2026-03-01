@@ -16,12 +16,13 @@ export function formatPreciseTime(date: Date | string): string {
 
 /** WhatsApp-style last seen: "Last seen today at 3:45 PM" */
 export function formatLastSeen(lastSeen: Date | string | null | undefined): string {
-    if (!lastSeen) return "Last seen recently";
+    if (!lastSeen) return "Offline";
     const d = new Date(lastSeen);
+    // Sanity check - if invalid date, fallback
+    if (isNaN(d.getTime())) return "Offline";
     const now = new Date();
     const secs = differenceInSeconds(now, d);
     const mins = differenceInMinutes(now, d);
-    const hours = differenceInHours(now, d);
     const days = differenceInDays(now, d);
 
     if (secs < 60) return "Last seen just now";

@@ -156,7 +156,7 @@ router.get("/", auth, async (req, res, next) => {
 
     // Get ALL active users (we filter/mask blocked ones in the loop)
     const users = await User.find({})
-      .select("_id username avatar online status friends blockedUsers role")
+      .select("_id username avatar online lastSeen status friends blockedUsers role")
       .sort({ online: -1, username: 1 })
       .lean();
 
@@ -209,6 +209,8 @@ router.get("/", auth, async (req, res, next) => {
           ...user,
           online: effectiveOnline,
           status: effectiveStatus,
+          // Privacy: only friends can see exact lastSeen (like WhatsApp)
+          lastSeen: isFriend ? user.lastSeen : null,
           isBlockedByMe,
           hasBlockedMe,
           unreadCount,
