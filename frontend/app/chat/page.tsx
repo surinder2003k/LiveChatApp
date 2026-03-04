@@ -199,6 +199,11 @@ export default function ChatPage() {
       setUsers(prev => prev.map(u => String(u._id) === String(userId) ? { ...u, lastSeen } : u));
     };
 
+    // Real-time lastMessage update for sidebar preview
+    const onSidebarUpdate = ({ userId, lastMessageText, lastMessageTime }: { userId: string, lastMessageText: string, lastMessageTime: string }) => {
+      setUsers(prev => prev.map(u => String(u._id) === String(userId) ? { ...u, lastMessageText, lastMessageTime } : u));
+    };
+
     socket.on("friendRequest", onSocialRefresh);
     socket.on("friendAccept", onSocialRefresh);
     socket.on("friendCancel", onSocialRefresh);
@@ -207,6 +212,7 @@ export default function ChatPage() {
     socket.on("blockUpdate", onSocialRefresh);
     socket.on("chatCleared", onChatCleared);
     socket.on("userLastSeen", onUserLastSeen);
+    socket.on("sidebarUpdate", onSidebarUpdate);
 
     return () => {
       socket.off("onlineUsers", onOnline);
@@ -225,6 +231,7 @@ export default function ChatPage() {
       socket.off("blockUpdate", onSocialRefresh);
       socket.off("chatCleared", onChatCleared);
       socket.off("userLastSeen", onUserLastSeen);
+      socket.off("sidebarUpdate", onSidebarUpdate);
     };
   }, [socket, onMsg, onNotification, onSocialRefresh, token]);
 

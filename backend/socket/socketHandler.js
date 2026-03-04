@@ -104,6 +104,17 @@ function initSocket(server, { corsOrigins }) {
         const room = roomIdFor(userId, to);
         io.to(room).emit("message", payload);
 
+        // Update Last Message for both users for Sidebar Preview
+        const lastMsgText = type === "image" ? "📷 Image" : trimmedText;
+        const lastMsgTime = msg.timestamp;
+
+        await User.findByIdAndUpdate(userId, { lastMessageText: lastMsgText, lastMessageTime: lastMsgTime });
+        await User.findByIdAndUpdate(to, { lastMessageText: lastMsgText, lastMessageTime: lastMsgTime });
+
+        // Emit sidebar update to both users rooms
+        io.to(String(userId)).emit("sidebarUpdate", { userId: to, lastMessageText: lastMsgText, lastMessageTime: lastMsgTime });
+        io.to(String(to)).emit("sidebarUpdate", { userId: userId, lastMessageText: lastMsgText, lastMessageTime: lastMsgTime });
+
         // Also notify the receiver if they aren't in the room
         userToSockets.get(to)?.forEach((sid) => {
           io.to(sid).emit("messageNotification", payload);

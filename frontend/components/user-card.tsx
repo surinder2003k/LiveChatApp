@@ -72,8 +72,15 @@ export function UserCard({
                 </span>
               )}
             </div>
-            <div className="truncate text-xs text-muted-foreground">
-              {user.isMe ? "Click avatar to set status" : (user.status || (online ? "Online" : "Offline"))}
+            <div className="flex items-center justify-between min-w-0">
+              <div className="truncate text-xs text-muted-foreground">
+                {user.isMe ? "Click avatar to set status" : (user.lastMessageText || user.status || (online ? "Online" : "Offline"))}
+              </div>
+              {user.lastMessageTime && (
+                <span className="shrink-0 text-[10px] text-muted-foreground/60 ml-2">
+                  {require("@/lib/time").formatMessageTime(new Date(user.lastMessageTime))}
+                </span>
+              )}
             </div>
           </div>
           {!!user.unreadCount && user.unreadCount > 0 && (

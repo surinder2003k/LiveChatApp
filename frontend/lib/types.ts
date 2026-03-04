@@ -15,6 +15,8 @@ export type User = {
   isBlockedByMe?: boolean;
   hasBlockedMe?: boolean;
   role?: "user" | "admin";
+  lastMessageText?: string;
+  lastMessageTime?: string | Date;
 };
 
 export type Message = {

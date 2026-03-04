@@ -70,15 +70,30 @@ export function MessageBubble({
       <ContextMenu>
         <ContextMenuTrigger disabled={!isMine}>
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.9, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className={cn(
-              "relative max-w-[75%] md:max-w-[65%] rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 text-[14.5px] leading-relaxed",
+              "relative max-w-[85%] md:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 text-[14.5px] leading-relaxed",
               isMine
-                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-br-sm"
-                : "bg-zinc-800/80 backdrop-blur-sm border border-white/5 text-zinc-100 rounded-bl-sm"
+                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-tr-none"
+                : "bg-zinc-800/90 backdrop-blur-sm border border-white/5 text-zinc-100 rounded-tl-none"
             )}
           >
+            {/* SVG Tail */}
+            <div className={cn(
+              "absolute top-0 w-3 h-4",
+              isMine ? "-right-2 text-purple-600" : "-left-2 text-zinc-800/90"
+            )}>
+              <svg viewBox="0 0 10 12" className="w-full h-full fill-current">
+                {isMine ? (
+                  <path d="M0 0 C 4 0, 8 0, 10 0 L 0 12 Z" />
+                ) : (
+                  <path d="M10 0 C 6 0, 2 0, 0 0 L 10 12 Z" />
+                )}
+              </svg>
+            </div>
+
             {editing ? (
               <div className="flex flex-col gap-2 min-w-[200px]">
                 <Input
@@ -97,13 +112,13 @@ export function MessageBubble({
               <div>
                 {message.type === "image" && message.image && (
                   <div
-                    className="relative cursor-pointer overflow-hidden rounded-lg group/img mb-1"
+                    className="relative cursor-pointer overflow-hidden rounded-lg group/img mb-1.5 shadow-md"
                     onClick={() => setViewerOpen(true)}
                   >
                     <img
                       src={getFullUrl(message.image)}
                       alt="Shared content"
-                      className="max-w-full max-h-[280px] w-full object-cover transition-transform duration-500 group-hover/img:scale-110"
+                      className="max-w-full max-h-[320px] w-full object-cover transition-transform duration-700 group-hover/img:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="bg-white/20 backdrop-blur-md p-2 rounded-full">
@@ -112,22 +127,22 @@ export function MessageBubble({
                     </div>
                   </div>
                 )}
-                {/* WhatsApp-style: invisible spacer forces text to wrap before timestamp */}
-                <span className="break-words">
-                  {message.isEdited && <span className="text-[10px] opacity-60 mr-1">(edited)</span>}
-                  {message.text}
-                  {/* Spacer that reserves space for the timestamp */}
-                  <span className="inline-block w-[72px]" aria-hidden="true" />
-                </span>
-                {/* Timestamp floated to bottom right */}
-                <div className={cn(
-                  "absolute bottom-1.5 right-2.5 flex items-center gap-1 text-[10px]",
-                  isMine ? "text-white/60" : "text-zinc-500"
-                )}>
-                  <span>{formatMessageTime(ts)}</span>
-                  {isMine && (
-                    <CheckCheck className={cn("h-3 w-3", message.seen ? "text-emerald-300" : "opacity-60")} />
-                  )}
+                <div className="relative flex flex-col pr-12">
+                  <span className="break-words">
+                    {message.isEdited && <span className="text-[10px] opacity-60 mr-1">(edited)</span>}
+                    {message.text}
+                  </span>
+
+                  {/* Timestamp & Status (Always bottom right of the bubble) */}
+                  <div className={cn(
+                    "absolute bottom-0 right-0 flex items-center gap-1 text-[10.5px]",
+                    isMine ? "text-white/60" : "text-zinc-500"
+                  )}>
+                    <span>{formatMessageTime(ts)}</span>
+                    {isMine && (
+                      <CheckCheck className={cn("h-3.5 w-3.5", message.seen ? "text-blue-300" : "opacity-60")} />
+                    )}
+                  </div>
                 </div>
               </div>
             )}

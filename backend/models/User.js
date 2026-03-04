@@ -11,7 +11,9 @@ const UserSchema = new mongoose.Schema(
     status: { type: String, default: "Hey there! I am using ChatApp." },
     friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
     blockedUsers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-    role: { type: String, enum: ["user", "admin"], default: "user" }
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    lastMessageText: { type: String, default: "" },
+    lastMessageTime: { type: Date, default: null }
   },
   { timestamps: true }
 );
@@ -27,7 +29,9 @@ UserSchema.methods.toSafeJSON = function () {
     status: this.status,
     friends: this.friends,
     blockedUsers: this.blockedUsers,
-    role: this.role
+    role: this.role,
+    lastMessageText: this.lastMessageText,
+    lastMessageTime: this.lastMessageTime
   };
 };
 

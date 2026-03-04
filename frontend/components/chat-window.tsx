@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile, Menu } from "lucide-react";
+import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile, Menu, MessageSquare, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -135,7 +135,7 @@ export function ChatWindow({
     // 2. Upload and Send (Parallel)
     try {
       setUploading(true);
-      if (files.length > 1) toast.info(`Uploading ${files.length} images...`);
+      const loadingToast = toast.loading(`Uploading ${files.length > 1 ? files.length + " images" : "image"}...`);
 
       const uploadPromises = files.map(async (file) => {
         const formData = new FormData();
@@ -155,7 +155,10 @@ export function ChatWindow({
       });
 
       await Promise.all(uploadPromises);
-      if (files.length > 1) toast.success("All images sent!");
+      toast.dismiss(loadingToast);
+      if (files.length > 1) {
+        toast.success(`Sent ${files.length} images successfully!`);
+      }
     } catch (err: any) {
       toast.error(err.message || "Some uploads failed");
     } finally {
@@ -166,30 +169,37 @@ export function ChatWindow({
 
   if (!other) {
     return (
-      <div className="flex h-full items-center justify-center p-6 text-center">
-        <div className="max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-primary/10 text-primary shadow-inner">
-            <UserPlus className="h-10 w-10" />
+      <div className="flex h-full items-center justify-center p-6 text-center bg-edtech">
+        <div className="max-w-md space-y-8 animate-in fade-in zoom-in duration-700">
+          <div className="relative mx-auto w-32 h-32">
+            <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
+            <div className="relative flex h-full w-full items-center justify-center rounded-[2.5rem] bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500">
+              <MessageSquare className="h-14 w-14" />
+            </div>
           </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-black tracking-tight text-foreground">Pick a user to start chatting</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              Your real-time conversation will appear here with smooth animations,
-              delivery status, and end-to-end simulated privacy.
+          <div className="space-y-3">
+            <h2 className="text-3xl font-black tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-purple-400">
+              Start a Conversation
+            </h2>
+            <p className="text-muted-foreground leading-relaxed font-medium">
+              Connect with friends instantly. Experience real-time messaging with
+              premium animations and enterprise-grade security.
             </p>
           </div>
           <div className="pt-4">
             <Button
               size="lg"
               onClick={onOpenSidebar}
-              className="md:hidden w-full max-w-[200px] h-12 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 shadow-xl shadow-indigo-500/20 hover:scale-105 transition-all group"
+              className="md:hidden w-full max-w-[240px] h-14 rounded-2xl bg-white text-indigo-600 font-bold shadow-xl shadow-white/10 hover:scale-105 active:scale-95 transition-all group"
             >
-              <Menu className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-              View Users List
+              <Users className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+              Discover Users
             </Button>
-            <p className="hidden md:block text-xs font-bold uppercase tracking-widest text-muted-foreground/40">
-              Select a contact from the sidebar to begin
-            </p>
+            <div className="hidden md:flex items-center justify-center gap-4 text-xs font-bold uppercase tracking-[0.2em] text-muted-foreground/40">
+              <span className="h-px w-8 bg-current/20" />
+              Select a contact to begin
+              <span className="h-px w-8 bg-current/20" />
+            </div>
           </div>
         </div>
       </div>
