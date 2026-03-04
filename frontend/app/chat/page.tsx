@@ -424,20 +424,7 @@ export default function ChatPage() {
 
         {/* Chat */}
         <div className="flex-1 min-h-0 overflow-hidden md:h-[calc(100dvh-6rem)] shadow-2xl">
-          {(authLoading || (!user && token)) ? (
-            <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
-              <div className="scale-125 mb-4 animate-pulse">
-                <Brand />
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <div className="space-y-1">
-                  <p className="text-foreground font-bold text-lg">Syncing Account</p>
-                  <p className="text-muted-foreground animate-pulse text-sm">Please wait while we set up your workspace...</p>
-                </div>
-              </div>
-            </div>
-          ) : user ? (
+          {user ? (
             <ChatWindow
               meId={user._id}
               other={activeUser ? usersWithStatus.find((x) => x._id === activeUser._id) || activeUser : null}
@@ -453,6 +440,19 @@ export default function ChatPage() {
               onClearChat={() => handleSocialAction("clearChat")}
               onOpenSidebar={() => setMobileOpen(true)}
             />
+          ) : authLoading ? (
+            <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
+              <div className="scale-125 mb-4 animate-pulse">
+                <Brand />
+              </div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+                <div className="space-y-1">
+                  <p className="text-foreground font-bold text-lg">Syncing Account</p>
+                  <p className="text-muted-foreground animate-pulse text-sm">Please wait while we set up your workspace...</p>
+                </div>
+              </div>
+            </div>
           ) : (
             <Card className="glass flex h-full items-center justify-center">
               <div className="text-center space-y-4">

@@ -8,15 +8,8 @@ import { useEffect } from "react";
 import { useAuth } from "@/contexts/auth-context";
 
 export default function LoginPage() {
-  const { isSignedIn, isLoaded } = useUser();
-  const { token, error, retrySync } = useAuth();
   const router = useRouter();
-
-  useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      router.push("/chat");
-    }
-  }, [isLoaded, isSignedIn, router]);
+  // We rely on Clerk's afterSignInUrl for redirects to ensure a clean transition
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 bg-edtech">
