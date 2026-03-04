@@ -145,7 +145,7 @@ export default function ChatPage() {
 
     if (isNotActiveChat && sender) {
       toast.info(`New message from ${sender.username}`, {
-        description: message.text.length > 50 ? message.text.slice(0, 50) + "..." : message.text,
+        description: (message.text || "").length > 50 ? (message.text || "").slice(0, 50) + "..." : (message.text || ""),
         action: { label: "Open", onClick: () => openChat(sender) }
       });
     }
@@ -253,9 +253,17 @@ export default function ChatPage() {
     socket.emit("stopTyping", { otherUserId: activeUser._id });
   }
 
-  function onSend(text: string, image?: string) {
+  function onSend(text: string, image?: string, voice?: string, duration?: number, type: "text" | "image" | "voice" | "gif" = "text") {
     if (!socket || !activeUser) return;
-    socket.emit("sendMessage", { to: activeUser._id, text, image, tempId: crypto.randomUUID?.() });
+    socket.emit("sendMessage", {
+      to: activeUser._id,
+      text,
+      image,
+      voice,
+      duration,
+      type,
+      tempId: crypto.randomUUID?.()
+    });
   }
 
   const onEditMessage = React.useCallback((messageId: string, newText: string) => {

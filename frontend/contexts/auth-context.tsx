@@ -85,12 +85,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ token: res.token, user: res.user, loading: false, error: null });
     } catch (e: any) {
       console.error("Auth sync error:", e);
-      // If we had a cached session, maybe don't kill it immediately on network error
-      if (!state.user) {
-        setState({ token: null, user: null, loading: false, error: e?.message || "Authentication failed" });
-      }
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: prev.user ? null : (e?.message || "Authentication failed")
+      }));
     }
-  }, [isLoaded, isSignedIn, clerkUser, getToken, state.token, state.user]);
+  }, [isLoaded, isSignedIn, clerkUser, getToken]);
 
   React.useEffect(() => {
     syncWithBackend();

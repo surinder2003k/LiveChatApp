@@ -10,10 +10,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import { TypingIndicator } from "@/components/typing-indicator";
 import { MessageBubble } from "@/components/message-bubble";
+import { GifPicker } from "@/components/gif-picker";
+import { VoiceRecorder } from "@/components/voice-recorder";
 import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import type { Message, User } from "@/lib/types";
+import { Mic, FileImage } from "lucide-react";
 import dynamic from "next/dynamic";
 import { formatLastSeen } from "@/lib/time";
 
@@ -49,7 +52,7 @@ export function ChatWindow({
   typingLabel: string | null;
   onTypingStart: () => void;
   onTypingStop: () => void;
-  onSend: (text: string, image?: string) => void;
+  onSend: (text: string, image?: string, voice?: string, duration?: number, type?: "text" | "image" | "voice" | "gif") => void;
   onEdit: (id: string, text: string) => void;
   onUnsend: (id: string) => void;
   onReact: (id: string, emoji: string) => void;
@@ -60,9 +63,12 @@ export function ChatWindow({
   const { token } = useAuth();
   const [text, setText] = React.useState("");
   const [showEmojiPicker, setShowEmojiPicker] = React.useState(false);
+  const [showGifPicker, setShowGifPicker] = React.useState(false);
+  const [isRecording, setIsRecording] = React.useState(false);
   const [uploading, setUploading] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement | null>(null);
   const pickerRef = React.useRef<HTMLDivElement | null>(null);
+  const gifPickerRef = React.useRef<HTMLDivElement | null>(null);
   const listRef = React.useRef<HTMLDivElement | null>(null);
   const typingTimeout = React.useRef<number | null>(null);
 
@@ -71,6 +77,9 @@ export function ChatWindow({
     function handleClickOutside(event: MouseEvent) {
       if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
         setShowEmojiPicker(false);
+      }
+      if (gifPickerRef.current && !gifPickerRef.current.contains(event.target as Node)) {
+        setShowGifPicker(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -99,20 +108,6 @@ export function ChatWindow({
   function scheduleStopTyping() {
     if (typingTimeout.current) window.clearTimeout(typingTimeout.current);
     typingTimeout.current = window.setTimeout(() => onTypingStop(), 900);
-  }
-
-  function handleChange(v: string) {
-    setText(v);
-    onTypingStart();
-    scheduleStopTyping();
-  }
-
-  function submit() {
-    const t = text.trim();
-    if (!t) return;
-    onSend(t);
-    setText("");
-    onTypingStop();
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -148,7 +143,7 @@ export function ChatWindow({
         });
 
         if (res.success) {
-          onSend("", res.url);
+          onSend("", res.url, undefined, undefined, "image");
         } else {
           throw new Error(res.message || "Upload failed");
         }
@@ -165,6 +160,56 @@ export function ChatWindow({
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  }
+
+  function handleChange(v: string) {
+    setText(v);
+    onTypingStart();
+    scheduleStopTyping();
+  }
+
+  function submit() {
+    const t = text.trim();
+    if (!t) return;
+    onSend(t, undefined, undefined, undefined, "text");
+    setText("");
+    onTypingStop();
+  }
+
+  async function handleVoiceSend(blob: Blob, duration: number) {
+    try {
+      setUploading(true);
+      const loadingToast = toast.loading("Sending voice message...");
+
+      const formData = new FormData();
+      formData.append("file", blob, "voice.webm");
+
+      const res = await apiFetch<any>("/api/messages/upload", {
+        method: "POST",
+        body: formData,
+        token: token
+      });
+
+      if (res.success) {
+        onSend("", undefined, res.url, duration, "voice");
+        toast.dismiss(loadingToast);
+      } else {
+        throw new Error(res.message || "Upload failed");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send voice message");
+    } finally {
+      setUploading(false);
+      setIsRecording(false);
+    }
+  }
+
+  function handleGifSelect(url: string) {
+    onSend("", undefined, undefined, undefined, "gif"); // First we need the URL storage
+    // Wait, gifs are just static URLs in our case or we can just treat them as 'image' type but with a 'gif' enum.
+    // Actually, I'll pass the URL as the 'image' field for now, but set type to 'gif'.
+    onSend("", url, undefined, undefined, "gif");
+    setShowGifPicker(false);
   }
 
   if (!other) {
@@ -282,75 +327,125 @@ export function ChatWindow({
             </div>
           ) : other.friendshipStatus === "accepted" ? (
             <>
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/jpeg,image/png,image/webp"
-                multiple
-                onChange={handleFileSelect}
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                disabled={uploading}
-                className="h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
-              </Button>
-              <div className="relative flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className={cn(
-                    "h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full",
-                    showEmojiPicker && "text-primary bg-primary/10"
-                  )}
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                >
-                  <Smile className="h-5 w-5" />
-                </Button>
+              {isRecording ? (
+                <VoiceRecorder onSend={handleVoiceSend} onCancel={() => setIsRecording(false)} />
+              ) : (
+                <>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    onChange={handleFileSelect}
+                  />
+                  <div className="flex items-center gap-0.5 md:gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={uploading}
+                      className="h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+                    </Button>
 
-                {showEmojiPicker && (
-                  <div
-                    ref={pickerRef}
-                    className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
-                  >
-                    <EmojiPicker
-                      onEmojiClick={(emojiData) => {
-                        setText((prev) => prev + emojiData.emoji);
-                        // setShowEmojiPicker(false); // Keep open to add multiple emojis like IG
-                      }}
-                      autoFocusSearch={false}
-                      theme={"dark" as any}
-                      width={320}
-                      height={400}
-                    />
+                    {/* GIF Picker */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full",
+                          showGifPicker && "text-primary bg-primary/10"
+                        )}
+                        onClick={() => {
+                          setShowGifPicker(!showGifPicker);
+                          setShowEmojiPicker(false);
+                        }}
+                      >
+                        <FileImage className="h-5 w-5" />
+                      </Button>
+                      {showGifPicker && (
+                        <div ref={gifPickerRef} className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                          <GifPicker onSelect={handleGifSelect} />
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Emoji Picker */}
+                    <div className="relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full",
+                          showEmojiPicker && "text-primary bg-primary/10"
+                        )}
+                        onClick={() => {
+                          setShowEmojiPicker(!showEmojiPicker);
+                          setShowGifPicker(false);
+                        }}
+                      >
+                        <Smile className="h-5 w-5" />
+                      </Button>
+
+                      {showEmojiPicker && (
+                        <div
+                          ref={pickerRef}
+                          className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
+                        >
+                          <EmojiPicker
+                            onEmojiClick={(emojiData) => {
+                              setText((prev) => prev + emojiData.emoji);
+                            }}
+                            autoFocusSearch={false}
+                            theme={"dark" as any}
+                            width={320}
+                            height={400}
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
 
-              <Input
-                value={text}
-                onChange={(e) => handleChange(e.target.value)}
-                placeholder="Type your message..."
-                className="border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/30"
-                onFocus={() => setShowEmojiPicker(false)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    submit();
-                  }
-                }}
-              />
-              <Button
-                size="icon"
-                className="h-10 w-10 shrink-0 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg transition-all hover:scale-105 hover:shadow-indigo-500/25 active:scale-95"
-                onClick={submit}
-              >
-                <SendHorizontal className="h-5 w-5" />
-              </Button>
+                  <Input
+                    value={text}
+                    onChange={(e) => handleChange(e.target.value)}
+                    placeholder="Type your message..."
+                    className="border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+                    onFocus={() => {
+                      setShowEmojiPicker(false);
+                      setShowGifPicker(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        submit();
+                      }
+                    }}
+                  />
+
+                  {text.trim() ? (
+                    <Button
+                      size="icon"
+                      className="h-10 w-10 shrink-0 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg transition-all hover:scale-105 hover:shadow-indigo-500/25 active:scale-95 rounded-full"
+                      onClick={submit}
+                    >
+                      <SendHorizontal className="h-5 w-5" />
+                    </Button>
+                  ) : (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-10 w-10 shrink-0 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 transition-all rounded-full"
+                      onClick={() => setIsRecording(true)}
+                    >
+                      <Mic className="h-5 w-5" />
+                    </Button>
+                  )}
+                </>
+              )}
             </>
           ) : (
             <div className="flex w-full items-center justify-center rounded-lg bg-muted/30 p-2 text-sm text-muted-foreground">

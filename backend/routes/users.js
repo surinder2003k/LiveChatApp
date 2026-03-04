@@ -116,7 +116,7 @@ router.get("/", auth, async (req, res, next) => {
 
     // Get ALL active users (we filter/mask blocked ones in the loop)
     const users = await User.find({})
-      .select("_id username avatar online lastSeen status friends blockedUsers role")
+      .select("_id username avatar online lastSeen status friends blockedUsers role lastMessageText lastMessageTime")
       .sort({ online: -1, username: 1 })
       .lean();
 

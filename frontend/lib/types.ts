@@ -23,9 +23,11 @@ export type Message = {
   _id: string;
   senderId: string;
   receiverId: string;
-  text: string;
+  text?: string;
   image?: string;
-  type: "text" | "image";
+  voice?: string;
+  duration?: number;
+  type: "text" | "image" | "voice" | "gif";
   timestamp: string | Date;
   seen: boolean;
   isEdited?: boolean;

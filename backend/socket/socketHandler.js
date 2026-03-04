@@ -81,21 +81,23 @@ function initSocket(server, { corsOrigins }) {
       socket.to(room).emit("stopTyping", { from: userId });
     });
 
-    socket.on("sendMessage", async ({ to, text, image, tempId }) => {
+    socket.on("sendMessage", async ({ to, text, image, voice, duration, type, tempId }) => {
       try {
         if (!mongoose.isValidObjectId(to)) return;
 
-        const type = image ? "image" : "text";
+        const messageType = type || (image ? "image" : "text");
         const trimmedText = text ? text.trim().slice(0, 2000) : "";
 
-        if (type === "text" && !trimmedText) return;
+        if (messageType === "text" && !trimmedText) return;
 
         const msg = await Message.create({
           senderId: userId,
           receiverId: to,
           text: trimmedText,
           image: image || null,
-          type: type,
+          voice: voice || null,
+          duration: duration || null,
+          type: messageType,
           timestamp: new Date(),
           seen: false
         });
@@ -105,7 +107,11 @@ function initSocket(server, { corsOrigins }) {
         io.to(room).emit("message", payload);
 
         // Update Last Message for both users for Sidebar Preview
-        const lastMsgText = type === "image" ? "📷 Image" : trimmedText;
+        let lastMsgText = trimmedText;
+        if (messageType === "image") lastMsgText = "📷 Image";
+        else if (messageType === "voice") lastMsgText = "🎤 Voice Message";
+        else if (messageType === "gif") lastMsgText = "🎬 GIF";
+
         const lastMsgTime = msg.timestamp;
 
         await User.findByIdAndUpdate(userId, { lastMessageText: lastMsgText, lastMessageTime: lastMsgTime });

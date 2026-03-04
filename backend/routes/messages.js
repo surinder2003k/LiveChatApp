@@ -29,10 +29,21 @@ if (process.env.CLOUDINARY_URL) {
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
-  params: {
-    folder: "livechat_uploads",
-    allowed_formats: ["jpg", "png", "webp"],
-    transformation: [{ width: 1000, height: 1000, crop: "limit" }] // Optimization
+  params: async (req, file) => {
+    let folder = "livechat_uploads";
+    let resource_type = "image";
+    const ext = path.extname(file.originalname).toLowerCase();
+
+    if ([".mp3", ".wav", ".m4a", ".webm", ".ogg"].includes(ext)) {
+      resource_type = "video"; // Cloudinary uses 'video' for audio as well
+      folder = "livechat_voice";
+    }
+
+    return {
+      folder: folder,
+      resource_type: resource_type,
+      allowed_formats: ["jpg", "png", "webp", "mp3", "wav", "m4a", "webm", "ogg"],
+    };
   }
 });
 
@@ -41,14 +52,17 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
-router.post("/upload", auth, upload.single("image"), (req, res) => {
+router.post("/upload", auth, upload.single("file"), (req, res) => {
   if (!req.file) return res.status(400).json({ message: "No file uploaded" });
   res.json({ url: req.file.path, success: true });
 });
 
 const sendSchema = z.object({
   text: z.string().max(2000).optional(),
-  image: z.string().optional()
+  image: z.string().optional(),
+  voice: z.string().optional(),
+  duration: z.number().optional(),
+  type: z.enum(["text", "image", "voice", "gif"]).optional()
 });
 
 router.get("/:userId", auth, async (req, res, next) => {
@@ -96,7 +110,9 @@ router.post("/:userId", auth, async (req, res, next) => {
       receiverId: otherId,
       text: body.text,
       image: body.image || null,
-      type: body.image ? "image" : "text",
+      voice: body.voice || null,
+      duration: body.duration || null,
+      type: body.type || (body.image ? "image" : body.voice ? "voice" : "text"),
       timestamp: new Date(),
       seen: false
     });

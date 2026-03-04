@@ -7,9 +7,10 @@ export function IntroLoader() {
     const [isVisible, setIsVisible] = React.useState(true);
 
     React.useEffect(() => {
+        // Failsafe: IntroLoader should NOT stay longer than 5 seconds under any circumstance
         const timer = setTimeout(() => {
             setIsVisible(false);
-        }, 2500);
+        }, 5000);
         return () => clearTimeout(timer);
     }, []);
 
