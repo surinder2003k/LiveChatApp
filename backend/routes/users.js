@@ -31,24 +31,7 @@ router.patch("/profile", auth, async (req, res, next) => {
   }
 });
 
-// Friend Request Routes
-router.post("/friend-request", auth, async (req, res, next) => {
-  try {
-    const { receiverId } = req.body;
-    const senderId = req.user.id;
-    if (senderId === receiverId) return res.status(400).json({ message: "Cannot friend yourself" });
-
-    const existing = await FriendRequest.findOne({ sender: senderId, receiver: receiverId, status: "pending" });
-    if (existing) return res.status(400).json({ message: "Request already pending" });
-
-    const request = new FriendRequest({ sender: senderId, receiver: receiverId });
-    await request.save();
-    res.json({ message: "Request sent" });
-  } catch (e) {
-    next(e);
-  }
-});
-
+// Unblock User
 router.post("/unblock", auth, async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -65,31 +48,7 @@ router.post("/unblock", auth, async (req, res, next) => {
   }
 });
 
-router.post("/friend-accept", auth, async (req, res, next) => {
-  try {
-    const { requestId } = req.body;
-    const request = await FriendRequest.findById(requestId);
-    if (!request || String(request.receiver) !== String(req.user.id)) {
-      return res.status(404).json({ message: "Request not found" });
-    }
-
-    request.status = "accepted";
-    await request.save();
-
-    await User.findByIdAndUpdate(request.sender, { $addToSet: { friends: request.receiver } });
-    await User.findByIdAndUpdate(request.receiver, { $addToSet: { friends: request.sender } });
-
-    const io = req.app.get("io");
-    if (io) {
-      io.to(String(request.sender)).emit("friendAccept", { from: req.user.id });
-    }
-
-    res.json({ message: "Request accepted" });
-  } catch (e) {
-    next(e);
-  }
-});
-
+// Unfriend User
 router.post("/unfriend", auth, async (req, res, next) => {
   try {
     const { userId } = req.body;
@@ -98,7 +57,7 @@ router.post("/unfriend", auth, async (req, res, next) => {
     await User.findByIdAndUpdate(meId, { $pull: { friends: userId } });
     await User.findByIdAndUpdate(userId, { $pull: { friends: meId } });
 
-    // Also delete any existing friend request documents between them so they can re-request
+    // Also delete any existing friend request documents between them
     await FriendRequest.deleteMany({
       $or: [
         { sender: meId, receiver: userId },
@@ -109,6 +68,7 @@ router.post("/unfriend", auth, async (req, res, next) => {
     const io = req.app.get("io");
     if (io) {
       io.to(String(userId)).emit("unfriend", { from: meId });
+      io.to(String(meId)).emit("unfriend", { from: userId }); // Emit to both for sync
     }
 
     res.json({ message: "Unfriended successfully" });
@@ -252,6 +212,7 @@ router.post("/friend-request", auth, async (req, res, next) => {
     const io = req.app.get("io");
     if (io) {
       io.to(String(receiverId)).emit("friendRequest", { from: senderId });
+      io.to(String(senderId)).emit("friendRequest", { from: receiverId }); // For multi-tab sync
     }
 
     res.json({ message: "Request sent" });
@@ -278,6 +239,7 @@ router.post("/friend-accept", auth, async (req, res, next) => {
     const io = req.app.get("io");
     if (io) {
       io.to(String(request.sender)).emit("friendAccept", { from: req.user.id });
+      io.to(String(req.user.id)).emit("friendAccept", { from: request.sender }); // For multi-tab sync
     }
 
     res.json({ message: "Request accepted" });
@@ -298,6 +260,7 @@ router.post("/friend-cancel", auth, async (req, res, next) => {
     const io = req.app.get("io");
     if (io) {
       io.to(String(request.receiver)).emit("friendCancel", { from: req.user.id });
+      io.to(String(req.user.id)).emit("friendCancel", { from: request.receiver }); // For multi-tab sync
     }
 
     res.json({ message: "Request cancelled" });
@@ -318,6 +281,7 @@ router.post("/friend-decline", auth, async (req, res, next) => {
     const io = req.app.get("io");
     if (io) {
       io.to(String(request.sender)).emit("friendDecline", { from: req.user.id });
+      io.to(String(req.user.id)).emit("friendDecline", { from: request.sender }); // For multi-tab sync
     }
 
     res.json({ message: "Request declined" });
