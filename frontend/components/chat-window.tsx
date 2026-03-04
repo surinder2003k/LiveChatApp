@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile, Menu, MessageSquare, Users, Plus, Film } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Mic } from "lucide-react";
@@ -327,7 +328,7 @@ export function ChatWindow({
               {isRecording ? (
                 <VoiceRecorder onSend={handleVoiceSend} onCancel={() => setIsRecording(false)} />
               ) : (
-                <div className="flex items-center gap-2 w-full">
+                <div className="flex items-center gap-2 w-full bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[28px] px-3 py-1.5 shadow-inner">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -337,66 +338,22 @@ export function ChatWindow({
                     onChange={handleFileSelect}
                   />
 
-                  {/* Plus Menu (Attachment) */}
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-10 w-10 shrink-0 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 transition-all rounded-full"
-                      >
-                        <Plus className="h-5 w-5" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent side="top" align="start" className="w-48 p-2 glass border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
-                      <div className="flex flex-col gap-1">
-                        <Button
-                          variant="ghost"
-                          className="justify-start gap-3 h-11 text-zinc-300 hover:text-white hover:bg-white/5"
-                          onClick={() => fileInputRef.current?.click()}
-                        >
-                          <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
-                            <ImageIcon className="h-4 w-4 text-blue-500" />
-                          </div>
-                          <span className="text-sm font-medium">Photos & Videos</span>
-                        </Button>
-
-                        <Popover open={showGifPicker} onOpenChange={setShowGifPicker}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              className="justify-start gap-3 h-11 text-zinc-300 hover:text-white hover:bg-white/5"
-                            >
-                              <div className="h-8 w-8 rounded-full bg-pink-500/10 flex items-center justify-center">
-                                <Film className="h-4 w-4 text-pink-500" />
-                              </div>
-                              <span className="text-sm font-medium">GIFs</span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent side="top" align="start" className="p-0 border-none bg-transparent shadow-none w-fit">
-                            <GifPicker onSelect={handleGifSelect} />
-                          </PopoverContent>
-                        </Popover>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-
-                  {/* Emoji Picker */}
+                  {/* Left: Emoji Picker */}
                   <div className="relative">
                     <Button
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        "h-10 w-10 shrink-0 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-all rounded-full",
+                        "h-10 w-10 shrink-0 text-zinc-400 hover:text-amber-500 hover:bg-amber-500/10 transition-all rounded-full",
                         showEmojiPicker && "text-amber-500 bg-amber-500/10"
                       )}
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     >
-                      <Smile className="h-5 w-5" />
+                      <Smile className="h-6 w-6" />
                     </Button>
 
                     {showEmojiPicker && (
-                      <div className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                      <div className="absolute bottom-14 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
                         <EmojiPicker
                           onEmojiClick={(emojiData) => {
                             setText((prev) => prev + emojiData.emoji);
@@ -413,8 +370,8 @@ export function ChatWindow({
                   <Input
                     value={text}
                     onChange={(e) => handleChange(e.target.value)}
-                    placeholder="Type your message..."
-                    className="border-none bg-muted/60 focus-visible:ring-1 focus-visible:ring-indigo-500/30 h-11 rounded-2xl"
+                    placeholder="Message..."
+                    className="flex-1 border-none bg-transparent focus-visible:ring-0 h-10 text-zinc-100 placeholder:text-zinc-500"
                     onFocus={() => {
                       setShowEmojiPicker(false);
                       setShowGifPicker(false);
@@ -427,24 +384,56 @@ export function ChatWindow({
                     }}
                   />
 
-                  {text.trim() ? (
+                  {/* Right: Quick Action Group */}
+                  <div className="flex items-center gap-0.5 pr-1">
+                    {/* GIF Button */}
+                    <Popover open={showGifPicker} onOpenChange={setShowGifPicker}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-10 w-10 shrink-0 text-zinc-400 hover:text-pink-500 hover:bg-pink-500/10 transition-all rounded-full"
+                        >
+                          <Film className="h-5.5 w-5.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent side="top" align="end" className="p-0 border-none bg-transparent shadow-none w-fit mb-4">
+                        <GifPicker onSelect={handleGifSelect} />
+                      </PopoverContent>
+                    </Popover>
+
+                    {/* Image Button */}
                     <Button
-                      size="icon"
-                      className="h-11 w-11 shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 rounded-full"
-                      onClick={submit}
-                    >
-                      <SendHorizontal className="h-5 w-5" />
-                    </Button>
-                  ) : (
-                    <Button
-                      size="icon"
                       variant="ghost"
-                      className="h-11 w-11 shrink-0 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 transition-all rounded-full"
-                      onClick={() => setIsRecording(true)}
+                      size="icon"
+                      className="h-10 w-10 shrink-0 text-zinc-400 hover:text-blue-500 hover:bg-blue-500/10 transition-all rounded-full"
+                      onClick={() => fileInputRef.current?.click()}
                     >
-                      <Mic className="h-5 w-5" />
+                      <ImageIcon className="h-5.5 w-5.5" />
                     </Button>
-                  )}
+
+                    {/* Voice Button / Send Button */}
+                    {text.trim() ? (
+                      <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }}>
+                        <Button
+                          size="icon"
+                          className="h-11 w-11 shrink-0 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 rounded-full ml-1"
+                          onClick={submit}
+                        >
+                          <SendHorizontal className="h-5.5 w-5.5" />
+                        </Button>
+                      </motion.div>
+                    ) : (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-10 w-10 shrink-0 text-zinc-400 hover:text-emerald-500 hover:bg-emerald-500/10 transition-all rounded-full"
+                        onClick={() => setIsRecording(true)}
+                      >
+                        <Mic className="h-6 w-6" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               )}
             </>

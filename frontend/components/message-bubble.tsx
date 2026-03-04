@@ -75,63 +75,49 @@ export function MessageBubble({
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            transition={{ type: "spring", stiffness: 350, damping: 25 }}
             className={cn(
-              "relative max-w-[85%] md:max-w-[70%] rounded-2xl px-3 py-2 shadow-sm transition-all duration-200 text-[14.5px] leading-relaxed z-[10]",
+              "relative max-w-[85%] md:max-w-[75%] px-4 py-2.5 shadow-sm transition-all duration-200 text-[15px] leading-relaxed z-[10]",
               isMine
-                ? "bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-tr-none"
-                : "bg-zinc-800/90 backdrop-blur-sm border border-white/5 text-zinc-100 rounded-tl-none"
+                ? "bg-gradient-to-br from-blue-600 to-indigo-700 text-white rounded-[24px] rounded-tr-[4px]"
+                : "bg-zinc-800/80 backdrop-blur-md border border-white/5 text-zinc-100 rounded-[24px] rounded-tl-[4px]"
             )}
           >
-            {/* SVG Tail */}
-            <div className={cn(
-              "absolute top-0 w-3 h-4",
-              isMine ? "-right-2 text-purple-600" : "-left-2 text-zinc-800/90"
-            )}>
-              <svg viewBox="0 0 10 12" className="w-full h-full fill-current">
-                {isMine ? (
-                  <path d="M0 0 C 4 0, 8 0, 10 0 L 0 12 Z" />
-                ) : (
-                  <path d="M10 0 C 6 0, 2 0, 0 0 L 10 12 Z" />
-                )}
-              </svg>
-            </div>
-
             {editing ? (
-              <div className="flex flex-col gap-2 min-w-[200px]">
+              <div className="flex flex-col gap-2 min-w-[220px]">
                 <Input
                   autoFocus
                   value={editText}
                   onChange={(e) => setEditText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleEditSubmit()}
-                  className="h-8 bg-black/20 border-white/10 text-white text-sm"
+                  className="h-9 bg-black/20 border-white/10 text-white text-sm rounded-xl"
                 />
                 <div className="flex justify-end gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)} className="h-7 text-xs text-white/70 hover:text-white">Cancel</Button>
-                  <Button size="sm" onClick={handleEditSubmit} className="h-7 text-xs bg-white text-indigo-600 hover:bg-white/90">Save</Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditing(false)} className="h-8 text-xs text-white/70 hover:text-white rounded-lg">Cancel</Button>
+                  <Button size="sm" onClick={handleEditSubmit} className="h-8 text-xs bg-white text-indigo-600 hover:bg-white/90 rounded-lg">Save</Button>
                 </div>
               </div>
             ) : (
-              <div>
+              <div className="space-y-2">
                 {(message.type === "image" || message.type === "gif") && message.image && (
                   <div
-                    className="relative cursor-pointer overflow-hidden rounded-lg group/img mb-1.5 shadow-md"
+                    className="relative cursor-pointer overflow-hidden rounded-2xl group/img shadow-lg border border-white/5"
                     onClick={() => setViewerOpen(true)}
                   >
                     <img
                       src={getFullUrl(message.image)}
                       alt="Shared content"
-                      className="max-w-full max-h-[320px] w-full object-cover transition-transform duration-700 group-hover/img:scale-105"
+                      className="max-w-full max-h-[350px] w-full object-cover transition-transform duration-700 group-hover/img:scale-105"
                     />
                     {message.type === "image" && (
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
-                        <div className="bg-white/20 backdrop-blur-md p-2 rounded-full">
+                        <div className="bg-white/20 backdrop-blur-md p-2.5 rounded-full">
                           <Maximize2 className="h-5 w-5 text-white" />
                         </div>
                       </div>
                     )}
                     {message.type === "gif" && (
-                      <div className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/50 backdrop-blur-md rounded text-[10px] font-bold text-white uppercase tracking-wider border border-white/10">
+                      <div className="absolute bottom-3 left-3 px-2 py-0.5 bg-black/50 backdrop-blur-md rounded-md text-[10px] font-black text-white uppercase tracking-widest border border-white/10">
                         GIF
                       </div>
                     )}

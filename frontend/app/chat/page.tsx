@@ -72,10 +72,9 @@ export default function ChatPage() {
 
   React.useEffect(() => {
     if (authLoading) return;
-    // If we have no token and no loading, we should only redirect to "/" 
-    // if we are NOT actually signed into Clerk.
-    // If we ARE signed in to Clerk but have no token, the AuthProvider 
-    // is likely still syncing, so we stay here.
+    if (!token) {
+      router.replace("/");
+    }
   }, [authLoading, token, router]);
 
   // Load users
@@ -367,6 +366,27 @@ export default function ChatPage() {
     return users.filter(u => u.friendshipStatus === "received");
   }, [users]);
 
+  if (authLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen gap-6 text-center bg-edtech">
+        <div className="scale-150 mb-4 animate-pulse">
+          <Brand />
+        </div>
+        <div className="flex flex-col items-center gap-2">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <div className="space-y-1">
+            <p className="text-foreground font-bold text-xl">Syncing Account</p>
+            <p className="text-muted-foreground animate-pulse text-sm">Please wait while we set up your workspace...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!token || !user) {
+    return null; // Transitioning to landing page
+  }
+
   return (
     <div className="min-h-dvh bg-edtech">
       <Navbar
@@ -380,7 +400,7 @@ export default function ChatPage() {
         transition={{ duration: 0.25 }}
         className="mx-auto flex flex-col h-[calc(100dvh-4rem)] max-w-7xl gap-2 p-2 md:grid md:grid-cols-[360px_1fr] md:gap-4 md:p-4"
       >
-        {/* Mobile active chat indicator (Optional, keeping it simple as per user request to move btn) */}
+        {/* Mobile active chat indicator */}
         {activeUser && (
           <div className="flex items-center justify-center p-2 md:hidden">
             <span className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
@@ -439,68 +459,21 @@ export default function ChatPage() {
 
         {/* Chat */}
         <div className="flex-1 min-h-0 overflow-hidden md:h-[calc(100dvh-6rem)] shadow-2xl">
-          {user ? (
-            <ChatWindow
-              meId={user._id}
-              other={activeUser ? usersWithStatus.find((x) => x._id === activeUser._id) || activeUser : null}
-              messages={messages}
-              typingLabel={typingLabel}
-              onTypingStart={onTypingStart}
-              onTypingStop={onTypingStop}
-              onSend={onSend}
-              onEdit={onEditMessage}
-              onUnsend={onUnsendMessage}
-              onReact={onReactToMessage}
-              onProfileOpen={setActiveProfile}
-              onClearChat={() => handleSocialAction("clearChat")}
-              onOpenSidebar={() => setMobileOpen(true)}
-            />
-          ) : authLoading ? (
-            <div className="flex flex-col items-center justify-center h-full gap-6 text-center">
-              <div className="scale-125 mb-4 animate-pulse">
-                <Brand />
-              </div>
-              <div className="flex flex-col items-center gap-2">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-                <div className="space-y-1">
-                  <p className="text-foreground font-bold text-lg">Syncing Account</p>
-                  <p className="text-muted-foreground animate-pulse text-sm">Please wait while we set up your workspace...</p>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <Card className="glass flex h-full items-center justify-center border-none">
-              <div className="text-center space-y-6 max-w-sm px-6">
-                <div className="flex justify-center">
-                  <Brand />
-                </div>
-                <div className="space-y-2">
-                  <p className="text-foreground font-bold text-xl">Session Problem</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {useAuth().error || "We couldn't verify your session or sync your account. Please try again or re-login."}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <Button
-                    variant="outline"
-                    className="border-primary/20 hover:bg-primary/5 rounded-xl h-12"
-                    onClick={() => window.location.reload()}
-                  >
-                    Refresh Page
-                  </Button>
-                  <Button
-                    className="h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20"
-                    onClick={() => {
-                      logout();
-                      router.push("/login");
-                    }}
-                  >
-                    Go to Login
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
+          <ChatWindow
+            meId={user._id}
+            other={activeUser ? usersWithStatus.find((x) => x._id === activeUser._id) || activeUser : null}
+            messages={messages}
+            typingLabel={typingLabel}
+            onTypingStart={onTypingStart}
+            onTypingStop={onTypingStop}
+            onSend={onSend}
+            onEdit={onEditMessage}
+            onUnsend={onUnsendMessage}
+            onReact={onReactToMessage}
+            onProfileOpen={setActiveProfile}
+            onClearChat={() => handleSocialAction("clearChat")}
+            onOpenSidebar={() => setMobileOpen(true)}
+          />
         </div>
       </motion.div>
 
