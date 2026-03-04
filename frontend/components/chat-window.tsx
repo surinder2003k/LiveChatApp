@@ -1,8 +1,11 @@
 "use client";
 
 import * as React from "react";
-import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile, Menu, MessageSquare, Users } from "lucide-react";
-
+import { SendHorizontal, UserPlus, XCircle, Trash2, Image as ImageIcon, Loader2, Smile, Menu, MessageSquare, Users, Plus, Film } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Mic } from "lucide-react";
+import dynamic from "next/dynamic";
+import { formatLastSeen } from "@/lib/time";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -16,9 +19,6 @@ import { apiFetch } from "@/lib/api";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/auth-context";
 import type { Message, User } from "@/lib/types";
-import { Mic, FileImage } from "lucide-react";
-import dynamic from "next/dynamic";
-import { formatLastSeen } from "@/lib/time";
 
 const EmojiPicker = dynamic(() => import("emoji-picker-react"), { ssr: false });
 
@@ -205,9 +205,6 @@ export function ChatWindow({
   }
 
   function handleGifSelect(url: string) {
-    onSend("", undefined, undefined, undefined, "gif"); // First we need the URL storage
-    // Wait, gifs are just static URLs in our case or we can just treat them as 'image' type but with a 'gif' enum.
-    // Actually, I'll pass the URL as the 'image' field for now, but set type to 'gif'.
     onSend("", url, undefined, undefined, "gif");
     setShowGifPicker(false);
   }
@@ -330,7 +327,7 @@ export function ChatWindow({
               {isRecording ? (
                 <VoiceRecorder onSend={handleVoiceSend} onCancel={() => setIsRecording(false)} />
               ) : (
-                <>
+                <div className="flex items-center gap-2 w-full">
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -339,81 +336,85 @@ export function ChatWindow({
                     multiple
                     onChange={handleFileSelect}
                   />
-                  <div className="flex items-center gap-0.5 md:gap-1">
+
+                  {/* Plus Menu (Attachment) */}
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-10 w-10 shrink-0 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 transition-all rounded-full"
+                      >
+                        <Plus className="h-5 w-5" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent side="top" align="start" className="w-48 p-2 glass border-white/10 shadow-2xl animate-in zoom-in-95 duration-200">
+                      <div className="flex flex-col gap-1">
+                        <Button
+                          variant="ghost"
+                          className="justify-start gap-3 h-11 text-zinc-300 hover:text-white hover:bg-white/5"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <div className="h-8 w-8 rounded-full bg-blue-500/10 flex items-center justify-center">
+                            <ImageIcon className="h-4 w-4 text-blue-500" />
+                          </div>
+                          <span className="text-sm font-medium">Photos & Videos</span>
+                        </Button>
+
+                        <Popover open={showGifPicker} onOpenChange={setShowGifPicker}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="justify-start gap-3 h-11 text-zinc-300 hover:text-white hover:bg-white/5"
+                            >
+                              <div className="h-8 w-8 rounded-full bg-pink-500/10 flex items-center justify-center">
+                                <Film className="h-4 w-4 text-pink-500" />
+                              </div>
+                              <span className="text-sm font-medium">GIFs</span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent side="top" align="start" className="p-0 border-none bg-transparent shadow-none w-fit">
+                            <GifPicker onSelect={handleGifSelect} />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+
+                  {/* Emoji Picker */}
+                  <div className="relative">
                     <Button
                       variant="ghost"
                       size="icon"
-                      disabled={uploading}
-                      className="h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full"
-                      onClick={() => fileInputRef.current?.click()}
+                      className={cn(
+                        "h-10 w-10 shrink-0 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 transition-all rounded-full",
+                        showEmojiPicker && "text-amber-500 bg-amber-500/10"
+                      )}
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                     >
-                      {uploading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ImageIcon className="h-5 w-5" />}
+                      <Smile className="h-5 w-5" />
                     </Button>
 
-                    {/* GIF Picker */}
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full",
-                          showGifPicker && "text-primary bg-primary/10"
-                        )}
-                        onClick={() => {
-                          setShowGifPicker(!showGifPicker);
-                          setShowEmojiPicker(false);
-                        }}
-                      >
-                        <FileImage className="h-5 w-5" />
-                      </Button>
-                      {showGifPicker && (
-                        <div ref={gifPickerRef} className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                          <GifPicker onSelect={handleGifSelect} />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Emoji Picker */}
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          "h-10 w-10 shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all rounded-full",
-                          showEmojiPicker && "text-primary bg-primary/10"
-                        )}
-                        onClick={() => {
-                          setShowEmojiPicker(!showEmojiPicker);
-                          setShowGifPicker(false);
-                        }}
-                      >
-                        <Smile className="h-5 w-5" />
-                      </Button>
-
-                      {showEmojiPicker && (
-                        <div
-                          ref={pickerRef}
-                          className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200"
-                        >
-                          <EmojiPicker
-                            onEmojiClick={(emojiData) => {
-                              setText((prev) => prev + emojiData.emoji);
-                            }}
-                            autoFocusSearch={false}
-                            theme={"dark" as any}
-                            width={320}
-                            height={400}
-                          />
-                        </div>
-                      )}
-                    </div>
+                    {showEmojiPicker && (
+                      <div className="absolute bottom-12 left-0 z-50 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                        <EmojiPicker
+                          onEmojiClick={(emojiData) => {
+                            setText((prev) => prev + emojiData.emoji);
+                          }}
+                          autoFocusSearch={false}
+                          theme={"dark" as any}
+                          width={320}
+                          height={400}
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <Input
                     value={text}
                     onChange={(e) => handleChange(e.target.value)}
                     placeholder="Type your message..."
-                    className="border-none bg-muted/50 focus-visible:ring-1 focus-visible:ring-primary/30"
+                    className="border-none bg-muted/60 focus-visible:ring-1 focus-visible:ring-indigo-500/30 h-11 rounded-2xl"
                     onFocus={() => {
                       setShowEmojiPicker(false);
                       setShowGifPicker(false);
@@ -429,7 +430,7 @@ export function ChatWindow({
                   {text.trim() ? (
                     <Button
                       size="icon"
-                      className="h-10 w-10 shrink-0 bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg transition-all hover:scale-105 hover:shadow-indigo-500/25 active:scale-95 rounded-full"
+                      className="h-11 w-11 shrink-0 bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20 transition-all hover:scale-105 active:scale-95 rounded-full"
                       onClick={submit}
                     >
                       <SendHorizontal className="h-5 w-5" />
@@ -438,13 +439,13 @@ export function ChatWindow({
                     <Button
                       size="icon"
                       variant="ghost"
-                      className="h-10 w-10 shrink-0 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 transition-all rounded-full"
+                      className="h-11 w-11 shrink-0 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 transition-all rounded-full"
                       onClick={() => setIsRecording(true)}
                     >
                       <Mic className="h-5 w-5" />
                     </Button>
                   )}
-                </>
+                </div>
               )}
             </>
           ) : (

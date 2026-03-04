@@ -50,18 +50,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   });
 
+  const isSyncing = React.useRef(false);
+
   const syncWithBackend = React.useCallback(async () => {
-    // 1. If Clerk not ready, handle background state
+    // 1. If Clerk not ready or no user, handle background state
     if (!isLoaded) return;
 
-    // 2. If Clerk ready but not signed in
     if (!isSignedIn || !clerkUser) {
       localStorage.removeItem("auth_user");
-      setState({ token: null, user: null, loading: false, error: null });
+      // Only update if we were previously loading or had a user
+      setState(prev => (prev.loading || prev.user) ? { token: null, user: null, loading: false, error: null } : prev);
       return;
     }
 
-    // 3. If signed in, run sync
+    // 2. Prevent concurrent or redundant syncs
+    if (isSyncing.current) return;
+
+    // If we already have a valid token and user, and it matches the current clerk user email, skip sync
+    if (state.token && state.user && state.user.email === clerkUser.primaryEmailAddress?.emailAddress) {
+      if (state.loading) setState(prev => ({ ...prev, loading: false }));
+      return;
+    }
+
+    isSyncing.current = true;
+
     // Only set loading to true if we absolutely have nothing yet
     if (!state.token || !state.user) {
       setState((prev) => ({ ...prev, loading: true, error: null }));
@@ -69,13 +81,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       const clerkToken = await getToken();
-      if (!clerkToken) throw new Error("No clerk token");
+      if (!clerkToken) throw new Error("No clerk token available");
+
+      const email = clerkUser.primaryEmailAddress?.emailAddress;
+      if (!email) throw new Error("Clerk user email not found");
 
       const res = await apiFetch<{ token: string; user: User }>("/api/auth/sync", {
         method: "POST",
         token: clerkToken,
         body: {
-          email: clerkUser.primaryEmailAddress?.emailAddress,
+          email,
+          username: clerkUser.username || clerkUser.firstName || email.split("@")[0],
           avatar: clerkUser.imageUrl
         }
       });
@@ -90,12 +106,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         loading: false,
         error: prev.user ? null : (e?.message || "Authentication failed")
       }));
+    } finally {
+      isSyncing.current = false;
     }
-  }, [isLoaded, isSignedIn, clerkUser, getToken]);
+  }, [isLoaded, isSignedIn, clerkUser, getToken, state.token, state.user, state.loading]);
 
   React.useEffect(() => {
     syncWithBackend();
-  }, [isLoaded, isSignedIn, syncWithBackend]);
+  }, [isLoaded, isSignedIn, clerkUser?.id, syncWithBackend]); // Use id instead of whole object
+
+  // 3. Failsafe: Reset loading if it takes more than 10 seconds
+  React.useEffect(() => {
+    if (state.loading) {
+      const timer = setTimeout(() => {
+        setState(prev => prev.loading ? { ...prev, loading: false, error: prev.user ? null : "Sync timed out. Please try refreshing." } : prev);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.loading]);
 
   const logout = React.useCallback(async () => {
     await signOut();

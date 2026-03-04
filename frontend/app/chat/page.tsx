@@ -469,21 +469,35 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            <Card className="glass flex h-full items-center justify-center">
-              <div className="text-center space-y-4">
-                <p className="text-muted-foreground font-bold">Session expired or not signed in</p>
-                <p className="text-xs text-muted-foreground/60 max-w-[240px] mx-auto">
-                  We couldn't verify your session. Please try logging in again to continue.
-                </p>
-                <Button
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20"
-                  onClick={() => {
-                    logout();
-                    router.push("/login");
-                  }}
-                >
-                  Go to Login
-                </Button>
+            <Card className="glass flex h-full items-center justify-center border-none">
+              <div className="text-center space-y-6 max-w-sm px-6">
+                <div className="flex justify-center">
+                  <Brand />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-foreground font-bold text-xl">Session Problem</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {useAuth().error || "We couldn't verify your session or sync your account. Please try again or re-login."}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    variant="outline"
+                    className="border-primary/20 hover:bg-primary/5 rounded-xl h-12"
+                    onClick={() => window.location.reload()}
+                  >
+                    Refresh Page
+                  </Button>
+                  <Button
+                    className="h-12 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/20"
+                    onClick={() => {
+                      logout();
+                      router.push("/login");
+                    }}
+                  >
+                    Go to Login
+                  </Button>
+                </div>
               </div>
             </Card>
           )}

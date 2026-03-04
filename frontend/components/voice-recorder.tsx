@@ -75,21 +75,32 @@ export function VoiceRecorder({ onSend, onCancel }: { onSend: (blob: Blob, durat
     };
 
     return (
-        <div className="flex items-center gap-3 bg-zinc-900 border border-indigo-500/30 rounded-full px-4 py-2 w-full animate-in slide-in-from-bottom-2">
-            <div className="relative flex items-center gap-2 flex-1">
-                <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ repeat: Infinity, duration: 1.5 }}
-                    className="h-2.5 w-2.5 rounded-full bg-red-500"
-                />
-                <span className="text-sm font-mono text-zinc-300">{formatTime(duration)}</span>
-                <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
+        <div className="flex items-center gap-3 bg-zinc-900/90 backdrop-blur-xl border border-indigo-500/30 rounded-2xl px-4 py-2 w-full animate-in slide-in-from-bottom-4 duration-300 shadow-2xl">
+            <div className="relative flex items-center gap-3 flex-1 overflow-hidden">
+                <div className="flex items-center gap-2 px-2 py-1 bg-red-500/10 rounded-lg border border-red-500/20">
                     <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 60, ease: "linear" }}
-                        className="h-full bg-indigo-500"
+                        animate={{ opacity: [1, 0, 1] }}
+                        transition={{ repeat: Infinity, duration: 1, ease: "easeInOut" }}
+                        className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"
                     />
+                    <span className="text-xs font-bold font-mono text-red-500 tabular-nums">{formatTime(duration)}</span>
+                </div>
+
+                <div className="flex-1 flex items-center gap-1 h-6 px-2">
+                    {[...Array(12)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            animate={{
+                                height: isRecording ? [4, 12 + Math.random() * 10, 4] : 4
+                            }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 0.5 + Math.random() * 0.5,
+                                delay: i * 0.05
+                            }}
+                            className="w-1 bg-indigo-500/40 rounded-full"
+                        />
+                    ))}
                 </div>
             </div>
 
@@ -98,14 +109,16 @@ export function VoiceRecorder({ onSend, onCancel }: { onSend: (blob: Blob, durat
                     size="icon"
                     variant="ghost"
                     onClick={cancelRecording}
-                    className="h-8 w-8 rounded-full text-zinc-400 hover:text-red-400 hover:bg-red-400/10"
+                    className="h-10 w-10 rounded-full text-zinc-400 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                    title="Cancel"
                 >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-5 w-5" />
                 </Button>
                 <Button
                     size="icon"
                     onClick={stopRecording}
-                    className="h-10 w-10 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/20"
+                    className="h-11 w-11 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95"
+                    title="Send Voice Message"
                 >
                     <Send className="h-5 w-5" />
                 </Button>
